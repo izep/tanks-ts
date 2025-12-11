@@ -1,0 +1,85 @@
+export const GameAction = {
+    AIM_UP: 'AIM_UP',
+    AIM_DOWN: 'AIM_DOWN',
+    POWER_UP: 'POWER_UP',
+    POWER_DOWN: 'POWER_DOWN',
+    FIRE: 'FIRE',
+    NEXT_WEAPON: 'NEXT_WEAPON',
+    PREV_WEAPON: 'PREV_WEAPON',
+    MOVE_LEFT: 'MOVE_LEFT',
+    MOVE_RIGHT: 'MOVE_RIGHT',
+    TOGGLE_SHIELD: 'TOGGLE_SHIELD',
+} as const;
+
+export type GameAction = typeof GameAction[keyof typeof GameAction];
+
+
+export class InputManager {
+    private activeActions: Set<GameAction> = new Set();
+    private triggeredActions: Set<GameAction> = new Set();
+    private keysHeld: Set<string> = new Set();
+    private keyBindings: Map<string, GameAction> = new Map();
+
+    constructor() {
+        this.setupDefaultBindings();
+        this.attachListeners();
+    }
+
+    private setupDefaultBindings() {
+        this.keyBindings.set('ArrowLeft', GameAction.AIM_UP);
+        this.keyBindings.set('ArrowRight', GameAction.AIM_DOWN);
+        this.keyBindings.set('ArrowUp', GameAction.POWER_UP);
+        this.keyBindings.set('ArrowDown', GameAction.POWER_DOWN);
+
+        this.keyBindings.set(' ', GameAction.FIRE);
+        this.keyBindings.set('Tab', GameAction.NEXT_WEAPON);
+        this.keyBindings.set('s', GameAction.TOGGLE_SHIELD);
+    }
+
+    private attachListeners() {
+        window.addEventListener('keydown', (e) => {
+            this.keysHeld.add(e.key);
+            const action = this.keyBindings.get(e.key);
+            if (action !== undefined) {
+                this.activeActions.add(action);
+                this.triggeredActions.add(action);
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            this.keysHeld.delete(e.key);
+            const action = this.keyBindings.get(e.key);
+            if (action !== undefined) {
+                this.activeActions.delete(action);
+            }
+        });
+    }
+
+    public isActionActive(action: GameAction): boolean {
+        return this.activeActions.has(action);
+    }
+
+    public isActionTriggered(action: GameAction): boolean {
+        const triggered = this.triggeredActions.has(action);
+        if (triggered) {
+            this.triggeredActions.delete(action);
+        }
+        return triggered;
+    }
+
+    // Call this start of frame to handle "pressed this frame" vs "held" if needed
+    // For now simple boolean check is fine for continuous input
+
+    public setInternalState(action: GameAction, active: boolean) {
+        if (active) {
+            this.activeActions.add(action);
+            this.triggeredActions.add(action);
+        } else {
+            this.activeActions.delete(action);
+        }
+    }
+
+    public handleInput(action: GameAction, active: boolean) {
+        this.setInternalState(action, active);
+    }
+}

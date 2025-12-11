@@ -1,0 +1,12 @@
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <!-- Drill Bit Icon -->
+  <!-- Shaft -->
+  <rect x="14" y="2" width="4" height="10" fill="#888" />
+  
+  <!-- Spiral Bit -->
+  <path d="M16 12 L10 18 L16 24 L22 18 Z" fill="#AAA" stroke="#444" stroke-width="1"/>
+  <path d="M16 18 L10 24 L16 30 L22 24 Z" fill="#AAA" stroke="#444" stroke-width="1"/>
+  
+  <!-- Tip -->
+  <path d="M16 30 L13 32 L19 32 Z" fill="#666" />
+</svg>

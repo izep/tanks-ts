@@ -1,0 +1,205 @@
+:root {
+  font-family: 'Inter', system-ui, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: dark;
+  color: rgba(255, 255, 255, 0.9);
+  background-color: #1a1a1a;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #111;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Responsive Game Container */
+#game-container {
+  position: relative;
+  /* Maintain aspect ratio or fill? User said "expand".
+     Let's try to fill as much as possible while keeping ratio vs filling screen. 
+     Usually full screen canvas is best for this request.
+     But canvas resolution is internal. 
+     Let's style it to fit containment. */
+  width: 100%;
+  height: 100%;
+  max-width: 1280px; /* Optional cap */
+  max-height: 900px;
+  background: #000;
+  box-shadow: 0 0 50px rgba(0,0,0,0.5);
+}
+
+#game-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain; /* Ensures canvas isn't stretched weirdly if aspect differs */
+}
+
+/* UI Layer */
+#ui-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 20;
+  overflow: hidden;
+}
+
+#ui-layer > * {
+  pointer-events: auto;
+}
+
+/* Glassmorphism Classes */
+.hud-panel {
+  background: rgba(30, 40, 50, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  color: white;
+  padding: 16px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.hud-panel h3 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.8;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.stat-label {
+  color: #aaa;
+}
+
+.stat-value {
+  font-weight: bold;
+  color: #fff;
+}
+
+/* Controls */
+.control-cluster {
+  position: absolute;
+  padding: 20px;
+  display: flex;
+  gap: 15px;
+}
+
+.bottom-left {
+  bottom: 20px;
+  left: 20px;
+  align-items: flex-end;
+}
+
+.bottom-right {
+  bottom: 20px;
+  right: 20px;
+  align-items: flex-end;
+}
+
+/* Circular Buttons */
+.btn-circle {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.btn-circle:active {
+  transform: scale(0.95);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-large {
+  width: 80px;
+  height: 80px;
+  background: rgba(200, 50, 50, 0.8);
+  border-color: rgba(255, 100, 100, 0.4);
+  font-size: 18px;
+}
+
+.btn-blue {
+    background: rgba(50, 100, 200, 0.6);
+    border-color: rgba(100, 150, 255, 0.4);
+}
+
+.btn-yellow {
+    background: rgba(200, 180, 50, 0.6);
+    border-color: rgba(255, 240, 100, 0.4);
+}
+
+/* D-Pad Layout */
+.d-pad-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr;
+    gap: 5px;
+    width: 150px;
+    height: 150px;
+}
+
+.d-pad-btn {
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px; /* Soft square */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 20px;
+    color: #ccc;
+    transition: background 0.1s;
+}
+
+.d-pad-btn:active {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Turn Message */
+#turn-message {
+    font-size: 3rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 0 4px 12px rgba(0,0,0,0.8);
+}

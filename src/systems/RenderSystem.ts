@@ -103,7 +103,6 @@ export class RenderSystem {
             case 2: bodyTmpl = this.SCIFI_BODY; turretTmpl = this.SCIFI_TURRET; break;
             case 3: bodyTmpl = this.HOVER_BODY; turretTmpl = this.HOVER_TURRET; break;
             case 4: bodyTmpl = this.RETRO_BODY; turretTmpl = this.RETRO_TURRET; break;
-            case 4: bodyTmpl = this.RETRO_BODY; turretTmpl = this.RETRO_TURRET; break;
             case 5: bodyTmpl = this.SPIKY_BODY; turretTmpl = this.SPIKY_TURRET; break;
             case 6: bodyTmpl = this.TRIPLE_BODY; turretTmpl = this.TRIPLE_TURRET; break;
             default: break; // Classic default
@@ -168,16 +167,45 @@ export class RenderSystem {
         this.ctx.fillStyle = '#0f0';
         this.ctx.fillRect(-15, healthY, 30 * (tank.health / 100), 4);
 
-        // Active Shield
+        // Active Shield - Enhanced visibility
         if (tank.activeShield && tank.shieldHealth && tank.shieldHealth > 0) {
-            this.ctx.strokeStyle = 'cyan';
+            const shieldAlpha = Math.min(1.0, tank.shieldHealth / 200);
+            const time = Date.now() / 1000;
+            const pulse = 0.5 + 0.5 * Math.sin(time * 3);
+            
+            this.ctx.save();
+            this.ctx.globalAlpha = 0.3 + 0.2 * pulse * shieldAlpha;
+            
+            // Outer shield glow
+            this.ctx.strokeStyle = '#00FFFF';
+            this.ctx.lineWidth = 3;
+            this.ctx.shadowColor = '#00FFFF';
+            this.ctx.shadowBlur = 15;
+            this.ctx.beginPath();
+            this.ctx.arc(0, -10, 28, 0, Math.PI * 2);
+            this.ctx.stroke();
+            
+            // Inner shield layer
+            this.ctx.strokeStyle = '#FFFFFF';
             this.ctx.lineWidth = 2;
-            this.ctx.shadowColor = 'cyan';
-            this.ctx.shadowBlur = 10;
-            this.ctx.globalAlpha = 0.6;
+            this.ctx.shadowBlur = 8;
             this.ctx.beginPath();
             this.ctx.arc(0, -10, 25, 0, Math.PI * 2);
             this.ctx.stroke();
+            
+            // Shield health indicator (hexagons for sci-fi look)
+            this.ctx.globalAlpha = 0.5 * shieldAlpha;
+            this.ctx.fillStyle = '#00FFFF';
+            for (let i = 0; i < 6; i++) {
+                const angle = (i * Math.PI / 3) + time;
+                const x = 22 * Math.cos(angle);
+                const y = -10 + 22 * Math.sin(angle);
+                this.ctx.beginPath();
+                this.ctx.arc(x, y, 3, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
+            
+            this.ctx.restore();
         }
 
         this.ctx.restore();

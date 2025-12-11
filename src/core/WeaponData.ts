@@ -29,6 +29,7 @@ export const WEAPON_ORDER = [
     'fuel_can', // Item
     'shield',   // Item
     'parachute', // Item
+    'battery',  // Item
     'tracer'    // New visual
 ];
 
@@ -192,6 +193,16 @@ export const WEAPONS: Record<string, WeaponStats> = {
         description: 'Saves you from falls.',
         type: 'item',
         effectValue: 1
+    },
+    'battery': {
+        name: 'Battery',
+        cost: 1500,
+        radius: 0,
+        damage: 0,
+        color: '#FFFF00',
+        description: 'Restores 10 health points.',
+        type: 'item',
+        effectValue: 10
     },
     'tracer': {
         name: 'Tracer (5)',

@@ -227,6 +227,66 @@ export class GameEngine {
             }
         }
 
+        // Battery usage to restore health
+        if (this.inputManager.isActionTriggered(GameAction.USE_BATTERY)) {
+            if ((tank.accessories['battery'] || 0) > 0 && tank.health < 100) {
+                const restoreAmount = WEAPONS['battery'].effectValue || 10;
+                const oldHealth = tank.health;
+                tank.health = Math.min(100, tank.health + restoreAmount);
+                tank.accessories['battery']--;
+                console.log(`Battery used! Health: ${oldHealth} -> ${tank.health}`);
+                this.soundManager.playUI();
+            } else if (tank.health >= 100) {
+                console.log("Health already full!");
+            } else {
+                console.log("No batteries!");
+            }
+        }
+
+        // Movement with fuel consumption
+        const MOVE_SPEED = 50; // pixels per second
+        const FUEL_COST_PER_PIXEL = 1;
+        
+        if (this.inputManager.isActionActive(GameAction.MOVE_LEFT) && tank.fuel > 0 && tank.hasLanded) {
+            const moveAmount = MOVE_SPEED * dt;
+            const fuelNeeded = Math.ceil(moveAmount * FUEL_COST_PER_PIXEL);
+            
+            if (tank.fuel >= fuelNeeded) {
+                const newX = Math.max(0, tank.x - moveAmount);
+                const groundY = this.terrainSystem.getGroundY(Math.floor(newX));
+                
+                // Check if slope is not too steep
+                const currentGroundY = this.terrainSystem.getGroundY(Math.floor(tank.x));
+                const slopeDiff = Math.abs(groundY - currentGroundY);
+                
+                if (slopeDiff < 15) { // Max climbable slope
+                    tank.x = newX;
+                    tank.y = groundY;
+                    tank.fuel -= fuelNeeded;
+                }
+            }
+        }
+        
+        if (this.inputManager.isActionActive(GameAction.MOVE_RIGHT) && tank.fuel > 0 && tank.hasLanded) {
+            const moveAmount = MOVE_SPEED * dt;
+            const fuelNeeded = Math.ceil(moveAmount * FUEL_COST_PER_PIXEL);
+            
+            if (tank.fuel >= fuelNeeded) {
+                const newX = Math.min(800 - 1, tank.x + moveAmount);
+                const groundY = this.terrainSystem.getGroundY(Math.floor(newX));
+                
+                // Check if slope is not too steep
+                const currentGroundY = this.terrainSystem.getGroundY(Math.floor(tank.x));
+                const slopeDiff = Math.abs(groundY - currentGroundY);
+                
+                if (slopeDiff < 15) { // Max climbable slope
+                    tank.x = newX;
+                    tank.y = groundY;
+                    tank.fuel -= fuelNeeded;
+                }
+            }
+        }
+
 
         // Testing phase switch
         if (this.inputManager.isActionTriggered(GameAction.FIRE)) {
@@ -296,6 +356,9 @@ export class GameEngine {
                 } else if (weaponId === 'parachute') {
                     tank.accessories['parachute'] = (tank.accessories['parachute'] || 0) + (weapon.effectValue || 1);
                     console.log(`Bought Parachute. Count: ${tank.accessories['parachute']}`);
+                } else if (weaponId === 'battery') {
+                    tank.accessories['battery'] = (tank.accessories['battery'] || 0) + (weapon.effectValue || 1);
+                    console.log(`Bought Battery. Count: ${tank.accessories['battery']}`);
                 }
                 return;
             }

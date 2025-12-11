@@ -9,6 +9,7 @@ export const GameAction = {
     MOVE_LEFT: 'MOVE_LEFT',
     MOVE_RIGHT: 'MOVE_RIGHT',
     TOGGLE_SHIELD: 'TOGGLE_SHIELD',
+    USE_BATTERY: 'USE_BATTERY',
 } as const;
 
 export type GameAction = typeof GameAction[keyof typeof GameAction];
@@ -34,6 +35,13 @@ export class InputManager {
         this.keyBindings.set(' ', GameAction.FIRE);
         this.keyBindings.set('Tab', GameAction.NEXT_WEAPON);
         this.keyBindings.set('s', GameAction.TOGGLE_SHIELD);
+        
+        // Movement keys
+        this.keyBindings.set('a', GameAction.MOVE_LEFT);
+        this.keyBindings.set('d', GameAction.MOVE_RIGHT);
+        
+        // Battery key
+        this.keyBindings.set('b', GameAction.USE_BATTERY);
     }
 
     private attachListeners() {

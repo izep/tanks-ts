@@ -11,10 +11,12 @@ library.add(faGear, faBolt, faBomb, faHeart, faShieldAlt, faCoins, faWind);
 dom.watch();
 
 const init = () => {
-  const app = document.querySelector<HTMLDivElement>('#app');
+  let app = document.querySelector<HTMLDivElement>('#app');
   if (!app) {
-    console.error("Critical Error: 'app' element not found in DOM");
-    return;
+    console.warn("Element '#app' not found in DOM. Current body:", document.body.innerHTML);
+    app = document.createElement('div');
+    app.id = 'app';
+    document.body.appendChild(app);
   }
 
   app.innerHTML = `

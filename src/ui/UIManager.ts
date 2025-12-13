@@ -540,7 +540,10 @@ export class UIManager {
             }
 
             document.getElementById('p-credits')!.innerText = tank.credits.toString();
-            document.getElementById('p-wind')!.innerText = state.wind.toFixed(1);
+
+            const w = state.wind;
+            const arrow = w > 0 ? '→' : (w < 0 ? '←' : '');
+            document.getElementById('p-wind')!.innerText = `${arrow} ${Math.abs(w).toFixed(1)}`;
 
             const weaponId = tank.currentWeapon || 'missile';
             const weapon = WEAPONS[weaponId];

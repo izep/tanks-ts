@@ -33,21 +33,28 @@ export class TerrainSystem {
         this.ctx.beginPath();
         this.ctx.moveTo(0, this.height);
 
-        const numHills = 3 + Math.random() * 3;
-        const phase = Math.random() * Math.PI * 2;
+        // Multi-octave noise for natural terrain
+        const offsets = [Math.random() * 100, Math.random() * 100, Math.random() * 100];
 
         for (let x = 0; x < this.width; x++) {
-            const normalizedX = x;
-            const angle1 = normalizedX * 0.01 * numHills + phase;
-            const angle2 = normalizedX * 0.02 * numHills + phase;
-            const yNorm = Math.sin(angle1) * 0.5 + Math.sin(angle2) * 0.25;
-            const baseHeight = this.height * 0.6;
-            const amplitude = 100;
-            const ySurface = Math.floor(baseHeight - (yNorm * amplitude));
+            // Octave 1: Large hills
+            const y1 = Math.sin(x * 0.005 + offsets[0]) * 150;
+            // Octave 2: Medium bumps
+            const y2 = Math.sin(x * 0.02 + offsets[1]) * 40;
+            // Octave 3: Roughness
+            const y3 = Math.sin(x * 0.05 + offsets[2]) * 10;
+            // Octave 4: Fine noise
+            const y4 = (Math.random() - 0.5) * 4;
 
-            this.ctx.lineTo(x, ySurface);
+            const baseHeight = this.height * 0.7; // Lower ground level
+            const ySurface = Math.floor(baseHeight - (y1 + y2 + y3 + y4));
 
-            for (let y = ySurface; y < this.height; y++) {
+            // Clamp
+            const clampedY = Math.max(100, Math.min(this.height - 20, ySurface));
+
+            this.ctx.lineTo(x, clampedY);
+
+            for (let y = clampedY; y < this.height; y++) {
                 if (y >= 0) {
                     this.terrainMask[y * this.width + x] = 1;
                 }

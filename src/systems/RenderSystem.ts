@@ -103,7 +103,7 @@ export class RenderSystem {
             case 2: bodyTmpl = this.SCIFI_BODY; turretTmpl = this.SCIFI_TURRET; break;
             case 3: bodyTmpl = this.HOVER_BODY; turretTmpl = this.HOVER_TURRET; break;
             case 4: bodyTmpl = this.RETRO_BODY; turretTmpl = this.RETRO_TURRET; break;
-            case 4: bodyTmpl = this.RETRO_BODY; turretTmpl = this.RETRO_TURRET; break;
+
             case 5: bodyTmpl = this.SPIKY_BODY; turretTmpl = this.SPIKY_TURRET; break;
             case 6: bodyTmpl = this.TRIPLE_BODY; turretTmpl = this.TRIPLE_TURRET; break;
             default: break; // Classic default

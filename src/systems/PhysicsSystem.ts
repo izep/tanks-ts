@@ -1,4 +1,4 @@
-import { type GameState, GamePhase, type ProjectileState } from '../core/GameState';
+import { type GameState, GamePhase, type ProjectileState, CONSTANTS } from '../core/GameState';
 import { TerrainSystem } from './TerrainSystem';
 import { WEAPONS } from '../core/WeaponData';
 
@@ -233,7 +233,7 @@ export class PhysicsSystem {
             }
 
             // Bounds Check
-            if (proj.x < 0 || proj.x > 800 || proj.y > 600) {
+            if (proj.x < 0 || proj.x > CONSTANTS.SCREEN_WIDTH || proj.y > CONSTANTS.SCREEN_HEIGHT) {
                 if (proj.state === 'rolling') {
                     toRemove.push(index);
                     collided = true;
@@ -269,7 +269,7 @@ export class PhysicsSystem {
         const x = Math.floor(proj.x);
 
         if (y < 0) return false;
-        if (y >= 600) return true;
+        if (y >= CONSTANTS.SCREEN_HEIGHT) return true;
 
         // Optim: Don't check terrain for 'digger' here, handled in loop?
         // Actually keep it generic. Digger needs special casing in calling code.

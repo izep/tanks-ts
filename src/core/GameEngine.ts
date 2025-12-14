@@ -272,7 +272,7 @@ export class GameEngine {
             const fuelNeeded = Math.ceil(moveAmount * FUEL_COST_PER_PIXEL);
             
             if (tank.fuel >= fuelNeeded) {
-                const newX = Math.min(800 - 1, tank.x + moveAmount);
+                const newX = Math.min(CONSTANTS.SCREEN_WIDTH - 1, tank.x + moveAmount);
                 const groundY = this.terrainSystem.getGroundY(Math.floor(newX));
                 
                 // Check if slope is not too steep
@@ -286,7 +286,6 @@ export class GameEngine {
                 }
             }
         }
-
 
         // Testing phase switch
         if (this.inputManager.isActionTriggered(GameAction.FIRE)) {

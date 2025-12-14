@@ -125,7 +125,7 @@ export class PhysicsSystem {
                 }
             } else {
                 // Normal flying
-                proj.vx += state.wind * dt;
+                proj.vx += state.wind * dt * 6; // High wind impact
                 proj.vy += state.gravity * dt * 10;
                 proj.x += proj.vx * dt;
                 proj.y += proj.vy * dt;

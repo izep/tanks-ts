@@ -420,8 +420,8 @@ export class GameEngine {
         this.state.roundNumber++;
 
         // Randomize Wind
-        // Wind range: -100 to 100
-        this.state.wind = (Math.random() * 200) - 100;
+        // Wind range: -35 to 35 (High impact)
+        this.state.wind = (Math.random() * 70) - 35;
         console.log(`Wind changed to: ${this.state.wind.toFixed(1)}`);
 
         this.terrainSystem.generate(this.state);
@@ -489,7 +489,7 @@ export class GameEngine {
         this.state.phase = GamePhase.AIMING;
 
         // Initial Wind
-        this.state.wind = (Math.random() * 200) - 100;
+        this.state.wind = (Math.random() * 70) - 35;
         console.log(`Initial Wind: ${this.state.wind.toFixed(1)}`);
 
         this.terrainSystem.generate(this.state);

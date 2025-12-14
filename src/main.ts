@@ -1,5 +1,6 @@
 import './style.css'
 import { GameEngine } from './core/GameEngine';
+import { TouchControls } from './ui/TouchControls';
 import { library, dom } from "@fortawesome/fontawesome-svg-core";
 import { faGear, faBolt, faBomb, faHeart, faShieldAlt, faCoins, faWind } from "@fortawesome/free-solid-svg-icons";
 
@@ -9,18 +10,33 @@ library.add(faGear, faBolt, faBomb, faHeart, faShieldAlt, faCoins, faWind);
 // Automatically replace <i> tags with <svg>
 dom.watch();
 
-document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-  <div id="game-container">
-    <canvas id="game-canvas"></canvas>
-    <div id="ui-layer"></div>
-  </div>
-`
+const init = () => {
+  let app = document.querySelector<HTMLDivElement>('#app');
+  if (!app) {
+    console.warn("Element '#app' not found in DOM. Current body:", document.body.innerHTML);
+    app = document.createElement('div');
+    app.id = 'app';
+    document.body.appendChild(app);
+  }
 
-const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
-const engine = new GameEngine(canvas);
-engine.start();
+  app.innerHTML = `
+    <div id="game-container">
+      <canvas id="game-canvas"></canvas>
+      <div id="ui-layer"></div>
+    </div>
+  `;
 
-import { TouchControls } from './ui/TouchControls';
-new TouchControls(engine.inputManager);
+  const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
+  const engine = new GameEngine(canvas);
+  engine.start();
 
-console.log("Game Started");
+  new TouchControls(engine.inputManager);
+
+  console.log("Game Started");
+};
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}

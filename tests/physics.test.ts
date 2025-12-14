@@ -61,14 +61,14 @@ describe('PhysicsSystem', () => {
         mockState.projectiles = [proj];
 
         // Step 0.1s
-        // vx should increase by wind * dt = 10 * 0.1 = 1
+        // vx should increase by wind * dt * 6 = 10 * 0.1 * 6 = 6
         // vy should increase by gravity * dt * 10 = 98 * 0.1 * 10 = 98
 
         physics.update(mockState, 0.1);
 
-        expect(proj.vx).toBeCloseTo(101);
+        expect(proj.vx).toBeCloseTo(106);
         expect(proj.vy).toBeCloseTo(98);
-        expect(proj.x).toBeCloseTo(100 + 101 * 0.1); // using new velocity approx
+        expect(proj.x).toBeCloseTo(100 + 106 * 0.1); // using new velocity approx
         // Actually current implementation uses new velocity for position update:
         // proj.vx += ...
         // proj.x += proj.vx * dt

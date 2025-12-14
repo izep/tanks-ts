@@ -298,8 +298,24 @@ export class PhysicsSystem {
 
         // Special Logic based on type
         if (weaponStats.type === 'dirt') {
-            // Riot Bomb
-            this.terrainSystem.addTerrain(state, x, y, radius);
+            // Dirt bomb - check if it hit a tank, if so position dirt at tank's Y (higher Y = visually below tank)
+            let dirtX = x;
+            let dirtY = y;
+
+            for (const tank of state.tanks) {
+                if (tank.health <= 0) continue;
+                const dx = x - tank.x;
+                const dy = y - (tank.y - 10);
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 20) {
+                    // Hit a tank - position dirt at tank's Y coordinate (on top in Y index terms)
+                    dirtX = tank.x;
+                    dirtY = tank.y; // Tank's Y is the bottom, dirt goes here (higher Y = visually below)
+                    break;
+                }
+            }
+
+            this.terrainSystem.addTerrain(state, dirtX, dirtY, radius);
         } else if (weaponStats.type === 'napalm' && newQueue) {
             // Napalm: Spawn particles
             for (let i = 0; i < 20; i++) {
@@ -476,11 +492,13 @@ export class PhysicsSystem {
                     tank.isFalling = false;
                     tank.isParachuteDeployed = false; // Ensure reset
                 }
-            } else if (tank.y > groundY + 2) {
+            } else if (tank.y > groundY + 2 && tank.isFalling) {
+                // Only reposition if tank was actually falling (not just terrain changed)
                 tank.y = groundY;
                 tank.vy = 0;
                 tank.isFalling = false;
             } else {
+                // Tank is on ground - don't move it even if terrain changes
                 tank.vy = 0;
                 tank.isFalling = false;
             }

@@ -612,6 +612,7 @@ export class UIManager {
         if (id === 'shield') return '/src/assets/misc/shield.svg';
         if (id === 'parachute') return '/src/assets/misc/parachute.svg';
         if (id === 'fuel_can') return '/src/assets/misc/fuel_tank.svg';
+        if (id === 'battery') return '/src/assets/misc/battery.svg';
         return `/src/assets/weapons/${id}.svg`;
     }
 

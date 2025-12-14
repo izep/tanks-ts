@@ -125,33 +125,38 @@ export class GameEngine {
 
         // 3. Terrain Settling
         if (this.state.phase === GamePhase.TERRAIN_SETTLING || this.state.terrainDirty) {
-            const moved = this.terrainSystem.settle(this.state);
-            if (!moved && this.state.phase === GamePhase.TERRAIN_SETTLING) {
-                // Settling done
-                console.log("Settling done, calling nextTurn");
+            try {
+                const moved = this.terrainSystem.settle(this.state);
+                if (!moved && this.state.phase === GamePhase.TERRAIN_SETTLING) {
+                    // Settling done
+                    console.log("Settling done, calling nextTurn");
 
-                // Check Win Condition before next turn
-                const alive = this.state.tanks.filter(t => !t.isDead && t.health > 0);
-                if (alive.length <= 1) {
-                    // Round Over
-                    // Award points/credits to winner?
-                    if (alive.length === 1) {
-                        const winner = alive[0];
-                        winner.credits += 1000; // Win bonus
-                        console.log(`Round Winner: ${winner.name}`);
-                    }
+                    // Check Win Condition before next turn
+                    const alive = this.state.tanks.filter(t => !t.isDead && t.health > 0);
+                    if (alive.length <= 1) {
+                        // Round Over
+                        // Award points/credits to winner?
+                        if (alive.length === 1) {
+                            const winner = alive[0];
+                            winner.credits += 1000; // Win bonus
+                            console.log(`Round Winner: ${winner.name}`);
+                        }
 
-                    if (this.state.roundNumber >= this.state.maxRounds) {
-                        console.log("Game Over - Max rounds reached");
-                        this.state.phase = GamePhase.GAME_OVER;
-                        this.soundManager.playUI();
+                        if (this.state.roundNumber >= this.state.maxRounds) {
+                            console.log("Game Over - Max rounds reached");
+                            this.state.phase = GamePhase.GAME_OVER;
+                            this.soundManager.playUI();
+                        } else {
+                            console.log("Round Over - Going to Shop");
+                            this.state.phase = GamePhase.SHOP;
+                        }
                     } else {
-                        console.log("Round Over - Going to Shop");
-                        this.state.phase = GamePhase.SHOP;
+                        this.physicsSystem.nextTurn(this.state);
                     }
-                } else {
-                    this.physicsSystem.nextTurn(this.state);
                 }
+            } catch (e) {
+                console.error('Terrain settling error:', e);
+                this.state.terrainDirty = false;
             }
         }
 
@@ -356,7 +361,7 @@ export class GameEngine {
                     tank.accessories['parachute'] = (tank.accessories['parachute'] || 0) + (weapon.effectValue || 1);
                     console.log(`Bought Parachute. Count: ${tank.accessories['parachute']}`);
                 } else if (weaponId === 'battery') {
-                    tank.accessories['battery'] = (tank.accessories['battery'] || 0) + (weapon.effectValue || 1);
+                    tank.accessories['battery'] = (tank.accessories['battery'] || 0) + 1;
                     console.log(`Bought Battery. Count: ${tank.accessories['battery']}`);
                 }
                 return;

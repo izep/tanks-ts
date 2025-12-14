@@ -65,10 +65,10 @@ export class RenderSystem {
         this.ctx.fillStyle = '#87CEEB';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // 2. Terrain
+        // 2. Base Terrain (includes all dirt that settles naturally)
         this.ctx.drawImage(this.terrainSystem.canvas, 0, 0);
 
-        // 3. Tanks
+        // 3. Tanks (always visible on top of terrain)
         state.tanks.forEach(tank => {
             if (tank.health > 0) {
                 this.drawTankSprite(tank);
@@ -80,7 +80,7 @@ export class RenderSystem {
             this.drawProjectile(proj);
         });
 
-        // 5. Explosions
+        // 6. Explosions
         state.explosions.forEach(exp => {
             this.drawExplosion(exp);
         });

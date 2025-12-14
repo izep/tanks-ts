@@ -132,24 +132,32 @@ export class TerrainSystem {
     }
 
     public addTerrain(gameState: GameState, x: number, y: number, radius: number) {
-        // 1. Visual Update
+        // Clamp coordinates to prevent drawing outside canvas (fixes freeze when off-screen)
+        const clampedX = Math.max(0, Math.min(this.width - 1, x));
+        const clampedY = Math.max(0, Math.min(this.height - 1, y));
+        const clampedRadius = Math.min(radius, Math.min(clampedX, this.width - clampedX, clampedY, this.height - clampedY));
+
+        // Only add if radius is valid
+        if (clampedRadius <= 0) return;
+
+        // 1. Visual Update (draw on base terrain canvas for settling)
         this.ctx.globalCompositeOperation = 'source-over';
         this.ctx.fillStyle = this.COLOR_DIRT;
         this.ctx.beginPath();
-        this.ctx.arc(x, y, radius, 0, Math.PI * 2);
+        this.ctx.arc(clampedX, clampedY, clampedRadius, 0, Math.PI * 2);
         this.ctx.fill();
 
-        // 2. Mask Update
-        const r2 = radius * radius;
-        const minX = Math.max(0, Math.floor(x - radius));
-        const maxX = Math.min(this.width - 1, Math.ceil(x + radius));
-        const minY = Math.max(0, Math.floor(y - radius));
-        const maxY = Math.min(this.height - 1, Math.ceil(y + radius));
+        // 2. Mask Update (use clamped values)
+        const r2 = clampedRadius * clampedRadius;
+        const minX = Math.max(0, Math.floor(clampedX - clampedRadius));
+        const maxX = Math.min(this.width - 1, Math.ceil(clampedX + clampedRadius));
+        const minY = Math.max(0, Math.floor(clampedY - clampedRadius));
+        const maxY = Math.min(this.height - 1, Math.ceil(clampedY + clampedRadius));
 
         for (let py = minY; py <= maxY; py++) {
             for (let px = minX; px <= maxX; px++) {
-                const dx = px - x;
-                const dy = py - y;
+                const dx = px - clampedX;
+                const dy = py - clampedY;
                 if (dx * dx + dy * dy <= r2) {
                     this.terrainMask[py * this.width + px] = 1;
                 }
@@ -163,6 +171,7 @@ export class TerrainSystem {
 
         gameState.terrainDirty = true;
     }
+
 
     public getGroundY(x: number): number {
         if (x < 0 || x >= this.width) return this.height;
@@ -183,6 +192,14 @@ export class TerrainSystem {
             return false;
         }
 
+        // Limit processing to prevent freeze - only process a subset of dirty columns per frame
+        const MAX_COLUMNS_PER_FRAME = 50;
+        const columnsToProcess = Array.from(this.dirtyColumns).slice(0, MAX_COLUMNS_PER_FRAME);
+
+        if (columnsToProcess.length === 0) {
+            return false;
+        }
+
         const width = this.width;
         const height = this.height;
         let anyMoved = false;
@@ -191,7 +208,6 @@ export class TerrainSystem {
         const view = new Uint32Array(imageData.data.buffer);
         const mask = this.terrainMask;
 
-        const columnsToProcess = Array.from(this.dirtyColumns);
         const settledColumns = new Set<number>();
 
         // Process each dirty column

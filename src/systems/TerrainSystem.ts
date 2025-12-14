@@ -1,10 +1,26 @@
 import type { GameState } from '../core/GameState';
 
+// Simple seeded random number generator (LCG - Linear Congruential Generator)
+class SeededRandom {
+    private seed: number;
+    
+    constructor(seed: number) {
+        this.seed = seed;
+    }
+    
+    // Generate a random number between 0 and 1
+    next(): number {
+        this.seed = (this.seed * 1103515245 + 12345) & 0x7fffffff;
+        return this.seed / 0x7fffffff;
+    }
+}
+
 export class TerrainSystem {
     public canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
     private width: number;
     private height: number;
+    private terrainSeed: number = 0;
 
     // Colors
     private readonly COLOR_DIRT = 'rgb(139, 69, 19)';
@@ -23,7 +39,7 @@ export class TerrainSystem {
         this.terrainMask = new Uint8Array(width * height);
     }
 
-    public generate(gameState: GameState) {
+    public generate(gameState: GameState, seed?: number) {
         this.ctx.clearRect(0, 0, this.width, this.height);
         this.terrainMask.fill(0);
         this.dirtyColumns.clear();
@@ -33,8 +49,17 @@ export class TerrainSystem {
         this.ctx.beginPath();
         this.ctx.moveTo(0, this.height);
 
+        // Use seed if provided, otherwise generate new one
+        if (seed !== undefined) {
+            this.terrainSeed = seed;
+        } else {
+            this.terrainSeed = Math.floor(Math.random() * 1000000);
+        }
+        
+        const rng = new SeededRandom(this.terrainSeed);
+
         // Multi-octave noise for natural terrain
-        const offsets = [Math.random() * 100, Math.random() * 100, Math.random() * 100];
+        const offsets = [rng.next() * 100, rng.next() * 100, rng.next() * 100];
 
         for (let x = 0; x < this.width; x++) {
             // Octave 1: Large hills
@@ -43,8 +68,8 @@ export class TerrainSystem {
             const y2 = Math.sin(x * 0.02 + offsets[1]) * 40;
             // Octave 3: Roughness
             const y3 = Math.sin(x * 0.05 + offsets[2]) * 10;
-            // Octave 4: Fine noise
-            const y4 = (Math.random() - 0.5) * 4;
+            // Octave 4: Fine noise (using seeded random)
+            const y4 = (rng.next() - 0.5) * 4;
 
             const baseHeight = this.height * 0.7; // Lower ground level
             const ySurface = Math.floor(baseHeight - (y1 + y2 + y3 + y4));
@@ -66,6 +91,11 @@ export class TerrainSystem {
         this.ctx.fill();
 
         gameState.terrainDirty = false;
+    }
+    
+    // Get the current terrain seed for reproducibility
+    public getSeed(): number {
+        return this.terrainSeed;
     }
 
     public explode(gameState: GameState, x: number, y: number, radius: number) {

@@ -108,6 +108,9 @@ export class UIManager {
         });
 
         // Bind Action Buttons
+        /* 
+        // Disabled in favor of TouchControls.ts for D-Pad and Fire
+        // Weapon and Shield are handled by setupLongPress below
         const keyMap: Record<string, string> = {
             'btn-left': 'ArrowLeft',
             'btn-right': 'ArrowRight',
@@ -136,6 +139,7 @@ export class UIManager {
                 btn.addEventListener('touchend', (e) => { e.preventDefault(); sendKey('keyup'); });
             }
         });
+        */
 
         // Special mapping for Shield button if not standard key
         document.getElementById('btn-shield')?.addEventListener('click', () => {
@@ -169,7 +173,7 @@ export class UIManager {
         // Setup Screen
         const setupDiv = document.createElement('div');
         setupDiv.id = 'setup-layer';
-        setupDiv.style.cssText = 'display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #222; color: white; padding: 40px; text-align: center; pointer-events: auto;';
+        setupDiv.style.cssText = 'display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #222; color: white; padding: 40px; text-align: center; pointer-events: auto; z-index: 2000;';
         setupDiv.innerHTML = `
             <h1>Setup Game</h1>
             <div style="margin: 20px;">

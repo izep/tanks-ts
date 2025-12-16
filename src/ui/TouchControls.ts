@@ -2,21 +2,16 @@ import { InputManager, GameAction } from '../core/InputManager';
 
 export class TouchControls {
     private inputManager: InputManager;
-    private container: HTMLElement | null;
 
     constructor(inputManager: InputManager) {
         this.inputManager = inputManager;
-        this.container = document.getElementById('touch-controls');
 
-        if (this.container) {
-            // Check for touch support or just leave hidden until needed?
-            // For now, let's NOT force it open, to avoid blocking UI if that's the issue.
-            // Functionality exists, verify via explicit touch simulation or enable if touch detected.
-            this.attachListeners();
-            if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
-                this.container.style.display = 'block';
-            }
-        }
+        // Detect touch device or just always enable if buttons exist
+        // We always try to attach listeners to the buttons if they are found
+        this.attachListeners();
+
+        // If we want to hide/show something based on touch, we can do it here,
+        // but currently the buttons are part of the main UI.
     }
 
     private attachListeners() {
@@ -25,8 +20,7 @@ export class TouchControls {
         this.bindButton('btn-left', GameAction.AIM_UP); // ArrowLeft maps to AIM_UP in InputManager default
         this.bindButton('btn-right', GameAction.AIM_DOWN); // ArrowRight maps to AIM_DOWN
         this.bindButton('btn-fire', GameAction.FIRE);
-        this.bindButton('btn-shield', GameAction.TOGGLE_SHIELD);
-        this.bindButton('btn-weapon', GameAction.NEXT_WEAPON);
+        this.bindButton('btn-fire-small', GameAction.FIRE);
     }
 
     private bindButton(id: string, action: GameAction) {

@@ -35,29 +35,42 @@ export class InputManager {
         this.keyBindings.set(' ', GameAction.FIRE);
         this.keyBindings.set('Tab', GameAction.NEXT_WEAPON);
         this.keyBindings.set('s', GameAction.TOGGLE_SHIELD);
-        
+
         // Movement keys
         this.keyBindings.set('a', GameAction.MOVE_LEFT);
         this.keyBindings.set('d', GameAction.MOVE_RIGHT);
-        
+
         // Battery key
         this.keyBindings.set('b', GameAction.USE_BATTERY);
     }
 
     private attachListeners() {
         window.addEventListener('keydown', (e) => {
+            const tag = (e.target as HTMLElement).tagName;
+            if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') {
+                return;
+            }
+
             this.keysHeld.add(e.key);
             const action = this.keyBindings.get(e.key);
             if (action !== undefined) {
+                e.preventDefault();
                 this.activeActions.add(action);
                 this.triggeredActions.add(action);
             }
         });
 
         window.addEventListener('keyup', (e) => {
+            const tag = (e.target as HTMLElement).tagName;
+            if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') {
+                this.keysHeld.delete(e.key); // Ensure key release is tracked if held during focus switch? relative minor
+                return;
+            }
+
             this.keysHeld.delete(e.key);
             const action = this.keyBindings.get(e.key);
             if (action !== undefined) {
+                e.preventDefault();
                 this.activeActions.delete(action);
             }
         });

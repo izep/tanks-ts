@@ -5,6 +5,9 @@ import { PhysicsSystem } from './PhysicsSystem';
 import { SoundManager } from '../core/SoundManager';
 import { WEAPONS, WEAPON_ORDER } from '../core/WeaponData';
 
+/**
+ * Handles input for the current player during their turn.
+ */
 export class PlayerInputSystem {
     private inputManager: InputManager;
     private terrainSystem: TerrainSystem;

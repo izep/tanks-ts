@@ -263,6 +263,9 @@ export class TerrainSystem {
         return anyMoved;
     }
 
+    /**
+     * Checks if a point in the terrain is solid.
+     */
     public isSolid(x: number, y: number): boolean {
         const ix = Math.floor(x);
         const iy = Math.floor(y);

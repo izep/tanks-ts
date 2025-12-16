@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { PhysicsSystem } from '../src/systems/PhysicsSystem';
 import { TerrainSystem } from '../src/systems/TerrainSystem';
 import { GamePhase, type GameState } from '../src/core/GameState';
+import { SoundManager } from '../src/core/SoundManager';
 
 // Mock Terrain with a Slope
 // Slope down to the right: y increases as x increases.
@@ -33,14 +34,34 @@ vi.mock('../src/systems/TerrainSystem', () => {
     };
 });
 
+class MockSoundManager extends SoundManager {
+    constructor() {
+        super();
+        this.ctx = { createGain: () => ({ connect: () => {}, gain: { value: 0 } }) } as any;
+    }
+    playExplosion() { }
+    playHit() { }
+}
+
+global.window = {
+    AudioContext: class {
+        createGain() { return { connect: () => {}, gain: { value: 0 } }; }
+        createOscillator() { return { connect: () => {}, start: () => {}, stop: () => {}, frequency: { setValueAtTime: () => {}, exponentialRampToValueAtTime: () => {} } }; }
+        destination: {}
+        currentTime: 0
+    },
+} as any;
+
 describe('PhysicsSystem Roller', () => {
     let physics: PhysicsSystem;
     let terrain: TerrainSystem;
     let state: GameState;
+    let soundManager: SoundManager;
 
     beforeEach(() => {
         terrain = new TerrainSystem(800, 600);
-        physics = new PhysicsSystem(terrain);
+        soundManager = new MockSoundManager();
+        physics = new PhysicsSystem(terrain, soundManager);
 
         state = {
             phase: GamePhase.PROJECTILE_FLYING,

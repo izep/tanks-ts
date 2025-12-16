@@ -4,6 +4,8 @@ import { PhysicsSystem } from '../src/systems/PhysicsSystem';
 import { TerrainSystem } from '../src/systems/TerrainSystem';
 import { GameState, GamePhase, type TankState } from '../src/core/GameState';
 
+import { SoundManager } from '../src/core/SoundManager';
+
 // Mock Canvas and Context for Node environment
 class MockContext {
     clearRect() { }
@@ -24,22 +26,43 @@ class MockCanvas {
     getContext() { return new MockContext(); }
 }
 
+class MockSoundManager extends SoundManager {
+    constructor() {
+        super();
+        this.ctx = { createGain: () => ({ connect: () => {}, gain: { value: 0 } }) } as any;
+    }
+    playExplosion() { }
+    playHit() { }
+}
+
 global.HTMLCanvasElement = MockCanvas as any;
 // @ts-ignore
 global.document = {
     createElement: () => new MockCanvas()
 } as any;
 
+// Mock window
+global.window = {
+    AudioContext: class {
+        createGain() { return { connect: () => {}, gain: { value: 0 } }; }
+        createOscillator() { return { connect: () => {}, start: () => {}, stop: () => {}, frequency: { setValueAtTime: () => {}, exponentialRampToValueAtTime: () => {} } }; }
+        destination: {}
+        currentTime: 0
+    },
+} as any;
+
 describe('PhysicsSystem', () => {
     let terrain: TerrainSystem;
     let physics: PhysicsSystem;
     let mockState: GameState;
+    let soundManager: SoundManager;
 
     beforeEach(() => {
         terrain = new TerrainSystem(800, 600);
+        soundManager = new MockSoundManager();
         // Spy on getGroundY to control terrain height for the test
         vi.spyOn(terrain, 'getGroundY').mockReturnValue(550);
-        physics = new PhysicsSystem(terrain);
+        physics = new PhysicsSystem(terrain, soundManager);
 
         mockState = {
             phase: GamePhase.PROJECTILE_FLYING,

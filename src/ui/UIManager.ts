@@ -298,7 +298,28 @@ export class UIManager {
         const grid = document.getElementById('shop-grid')!;
         grid.innerHTML = ''; // Clear
 
+        const categoryHeaders: Record<string, string> = {
+            'baby_missile': 'Standard Weapons',
+            'riot_charge': 'Earth Destroying',
+            'dirt_clod': 'Earth Producing',
+            'plasma_blast': 'Energy Weapons',
+            'napalm': 'Other Weapons',
+            'fuel_can': 'Items & Accessories'
+        };
+
         WEAPON_ORDER.forEach(key => {
+            // Insert category header if this key marks the start of a new category
+            if (categoryHeaders[key]) {
+                const header = document.createElement('h3');
+                header.textContent = categoryHeaders[key];
+                header.style.gridColumn = '1 / -1'; // Span full width
+                header.style.color = '#gold';
+                header.style.borderBottom = '1px solid #444';
+                header.style.paddingBottom = '5px';
+                header.style.marginTop = '20px';
+                grid.appendChild(header);
+            }
+
             const weapon = WEAPONS[key];
             const card = document.createElement('div');
             card.style.border = '1px solid #444';
@@ -610,7 +631,7 @@ export class UIManager {
 
     private getWeaponIconPath(id: string): string {
         if (id === 'death_head') return '/src/assets/weapons/deaths_head.svg';
-        if (id === 'dirt_bomb') return '/src/assets/weapons/dirt_ball.svg';
+        if (id === 'dirt_clod') return '/src/assets/weapons/dirt_ball.svg';
         if (id === 'segway') return '/src/assets/weapons/roller.svg';
         if (id === 'leapfrog') return '/src/assets/weapons/leap_frog.svg';
         if (id === 'shield') return '/src/assets/misc/shield.svg';

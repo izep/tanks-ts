@@ -1,23 +1,20 @@
 import { type GameState, GamePhase, CONSTANTS } from './GameState';
 import { InputManager, GameAction } from './InputManager';
-import { AIController, AIPersonality } from './AIController';
 import { TerrainSystem } from '../systems/TerrainSystem';
 import { PhysicsSystem } from '../systems/PhysicsSystem';
 import { UIManager } from '../ui/UIManager';
 import { SoundManager } from './SoundManager';
 import { RenderSystem } from '../systems/RenderSystem';
-import { WEAPONS, WEAPON_ORDER } from './WeaponData';
-
+import { GameSetupSystem } from '../systems/GameSetupSystem';
+import { PlayerInputSystem } from '../systems/PlayerInputSystem';
+import { AISystem } from '../systems/AISystem';
+import { ShopSystem } from '../systems/ShopSystem';
+import { GameFlowSystem } from '../systems/GameFlowSystem';
 export class GameEngine {
     private canvas: HTMLCanvasElement;
     // private ctx: CanvasRenderingContext2D; // Moved to RenderSystem
     private isRunning: boolean = false;
     private lastTime: number = 0;
-    private aiTurnTimer: number = 0;
-    private readonly AI_TURN_DELAY = 1.0; // 1 second delay
-
-    // Input scaling
-    private inputHoldTime: number = 0;
 
     public state: GameState;
     public inputManager: InputManager;
@@ -26,6 +23,11 @@ export class GameEngine {
     public uiManager: UIManager;
     public soundManager: SoundManager;
     public renderSystem: RenderSystem;
+    public gameSetupSystem: GameSetupSystem;
+    public playerInputSystem: PlayerInputSystem;
+    public aiSystem: AISystem;
+    public shopSystem: ShopSystem;
+    public gameFlowSystem: GameFlowSystem;
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -57,16 +59,26 @@ export class GameEngine {
         this.uiManager = new UIManager();
         this.soundManager = new SoundManager();
         this.renderSystem = new RenderSystem(this.canvas, this.terrainSystem);
+        this.gameSetupSystem = new GameSetupSystem(this.terrainSystem, this.soundManager);
+        this.playerInputSystem = new PlayerInputSystem(
+            this.inputManager,
+            this.terrainSystem,
+            this.physicsSystem,
+            this.soundManager
+        );
+        this.aiSystem = new AISystem(this.physicsSystem, this.soundManager);
+        this.shopSystem = new ShopSystem(this.soundManager);
+        this.gameFlowSystem = new GameFlowSystem(this.terrainSystem, this.physicsSystem, this.soundManager);
 
         // Init Terrain
         this.terrainSystem.generate(this.state);
 
         // UI Bindings
-        this.uiManager.onBuyWeapon = (weaponId) => this.handleBuyWeapon(weaponId);
-        this.uiManager.onNextRound = () => this.handleNextRound();
-        this.uiManager.onStartGame = (config) => this.handleStartGame(config);
-        this.uiManager.onSetWeapon = (id) => this.handleSetWeapon(id);
-        this.uiManager.onSetShield = (id) => this.handleSetShield(id);
+        this.uiManager.onBuyWeapon = (weaponId) => this.shopSystem.handleBuyWeapon(this.state, weaponId);
+        this.uiManager.onNextRound = () => this.gameFlowSystem.handleNextRound(this.state);
+        this.uiManager.onStartGame = (config) => this.gameSetupSystem.handleStartGame(this.state, config);
+        this.uiManager.onSetWeapon = (id) => this.shopSystem.handleSetWeapon(this.state, id);
+        this.uiManager.onSetShield = (id) => this.shopSystem.handleSetShield(this.state, id);
         this.uiManager.onRestartGame = () => {
             console.log("Restarting Game...");
             this.state.phase = GamePhase.SETUP;
@@ -109,9 +121,9 @@ export class GameEngine {
             const currentTank = this.state.tanks[this.state.currentPlayerIndex];
             if (currentTank) {
                 if (currentTank.isAi) {
-                    this.handleAiTurn(dt);
+                    this.aiSystem.handleAiTurn(this.state, dt);
                 } else {
-                    this.handleAimingInput(dt);
+                    this.playerInputSystem.handleAimingInput(this.state, dt);
                 }
             } else {
                 // Tank dead? Next turn?
@@ -160,6 +172,7 @@ export class GameEngine {
                 this.state.terrainDirty = false;
             }
         }
+        this.gameFlowSystem.update(this.state);
 
         // 4. Shop Phase Input
         if (this.state.phase === GamePhase.SHOP) {
@@ -492,29 +505,8 @@ export class GameEngine {
             });
         });
 
-        this.state.maxRounds = config.rounds || 10;
-        this.state.phase = GamePhase.AIMING;
 
-        // Initial Wind
-        this.state.wind = (Math.random() * 70) - 35;
-        console.log(`Initial Wind: ${this.state.wind.toFixed(1)}`);
 
-        this.terrainSystem.generate(this.state);
-        this.soundManager.playUI(); // Will also resume AudioContext
-    }
-
-    private getTestInventory(): Record<string, number> {
-        const inv: Record<string, number> = {};
-        WEAPON_ORDER.forEach(w => {
-            const stats = WEAPONS[w];
-            if (stats.cost === 0) {
-                inv[w] = -1;
-            } else {
-                inv[w] = 100;
-            }
-        });
-        return inv;
-    }
 
     private render() {
         this.renderSystem.render(this.state);

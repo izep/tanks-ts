@@ -5,30 +5,74 @@ import { GamePhase, type GameState, type TankState } from '../src/core/GameState
 import { WEAPONS } from '../src/core/WeaponData';
 
 // Mock dependencies
-const mockRenderSystem = { render: vi.fn(), resize: vi.fn() };
-const mockInputManager = { update: vi.fn(), isActionActive: vi.fn(), getAngleChange: vi.fn(), getPowerChange: vi.fn() };
-const mockSoundManager = { playUI: vi.fn(), playFire: vi.fn(), playExplosion: vi.fn() };
-const mockUIManager = { update: vi.fn(), onBuyWeapon: vi.fn() };
+vi.mock('../src/systems/RenderSystem', () => ({
+    RenderSystem: class {
+        render = vi.fn();
+        resize = vi.fn();
+    }
+}));
+vi.mock('../src/core/InputManager', () => ({
+    InputManager: class {
+        update = vi.fn();
+        isActionActive = vi.fn();
+        getAngleChange = vi.fn();
+        getPowerChange = vi.fn();
+    }
+}));
+vi.mock('../src/core/SoundManager', () => ({
+    SoundManager: class {
+        playUI = vi.fn();
+        playFire = vi.fn();
+        playExplosion = vi.fn();
+    }
+}));
+vi.mock('../src/ui/UIManager', () => ({
+    UIManager: class {
+        update = vi.fn();
+        onBuyWeapon = vi.fn();
+    }
+}));
+vi.mock('../src/systems/TerrainSystem', () => ({
+    TerrainSystem: class {
+        getGroundY = vi.fn().mockReturnValue(500);
+        generate = vi.fn();
+    }
+}));
 
-// We need to bypass the strict dependency injection or mock the constructor behavior if we want to test GameEngine methods directly.
-// But GameEngine is the main class.
-// Let's create a minimal instance or define the testable method if possible.
-// Actually, we can just test the logic on the State directly if we extracted it, but it's in GameEngine.
+// Mock Canvas
+class MockCanvas {
+    getContext = () => ({
+        clearRect: vi.fn(),
+        drawImage: vi.fn(),
+        fillRect: vi.fn(),
+        beginPath: vi.fn(),
+        moveTo: vi.fn(),
+        lineTo: vi.fn(),
+        stroke: vi.fn(),
+        fill: vi.fn(),
+        arc: vi.fn(),
+    });
+    width = 800;
+    height = 600;
+}
 
-// Inspecting GameEngine, handleBuyWeapon modifies state.
-// We can instantiate GameEngine with mocks.
+global.HTMLCanvasElement = MockCanvas as any;
 
-describe('Shop System', () => {
-    let engine: any; // Use any to access private methods/cast
+
+describe('Shop System Integration Test', () => {
+    let engine: GameEngine;
     let state: GameState;
 
     beforeEach(() => {
-        // Setup initial state manually to match what likely exists
+        const canvas = new MockCanvas() as unknown as HTMLCanvasElement;
+        engine = new GameEngine(canvas);
+
+        // Setup initial state for testing the shop
         state = {
             phase: GamePhase.SHOP,
             tanks: [
-                { id: 1, name: 'P1', x: 0, y: 0, angle: 45, power: 50, health: 100, fuel: 100, color: 'red', weapon: 'missile', activeShield: false, accessories: { shield: 0 }, inventory: { 'missile': -1 }, credits: 1000, variant: 0, isAi: false, isDead: false } as unknown as TankState,
-                { id: 2, name: 'P2', x: 100, y: 0, angle: 45, power: 50, health: 100, fuel: 100, color: 'blue', weapon: 'missile', activeShield: false, accessories: { shield: 0 }, inventory: { 'missile': -1 }, credits: 0, variant: 0, isAi: false, isDead: false } as unknown as TankState
+                { id: 1, name: 'P1', credits: 10000, inventory: { 'missile': -1 }, fuel: 100, accessories: { shield: 0 } } as unknown as TankState,
+                { id: 2, name: 'P2', credits: 100, inventory: { 'missile': -1 }, fuel: 100, accessories: { shield: 0 } } as unknown as TankState,
             ],
             projectiles: [],
             explosions: [],
@@ -41,62 +85,55 @@ describe('Shop System', () => {
             lastExplosionTime: 0
         };
 
-        // We can't really "new GameEngine()" easily without full DOM mocks.
-        // Instead, let's extract the logic we want to test or mock the DOM.
-        // Or, assume we can just test the state mutation if we write a helper.
-        // But verifying the actual game code is better.
-
-        // Let's rely on the user instructions which said "I implemented logic in GameEngine handleBuyWeapon".
-        // I want to verify that.
+        engine.state = state;
     });
 
-    it('should allow buying weapon if enough credits', () => {
-        const tank = state.tanks[0]; // 1000 credits
+    it('should allow a player to buy a weapon if they have enough credits', () => {
+        const tank = state.tanks[0];
         const weaponId = 'tracer'; // Costs 500
         const cost = WEAPONS[weaponId].cost;
 
-        // Simulate logic
-        if (tank.credits >= cost) {
-            tank.credits -= cost;
-            tank.inventory[weaponId] = (tank.inventory[weaponId] || 0) + 1;
-        }
+        // @ts-ignore - private method access for testing
+        engine.handleBuyWeapon(weaponId);
 
-        expect(tank.credits).toBe(1000 - cost);
+        expect(tank.credits).toBe(10000 - cost);
         expect(tank.inventory['tracer']).toBe(1);
     });
 
-    it('should NOT allow buying if insufficient credits', () => {
-        const tank = state.tanks[1]; // 0 credits
-        const weaponId = 'nuke'; // Costs 500
+    it('should not allow a player to buy a weapon if they have insufficient credits', () => {
+        const tank = state.tanks[1]; // 100 credits
+        const weaponId = 'nuke'; // Costs 20000
 
-        if (tank.credits >= WEAPONS[weaponId].cost) {
-            tank.credits -= WEAPONS[weaponId].cost;
-            tank.inventory[weaponId] = (tank.inventory[weaponId] || 0) + 1;
-        }
+        // @ts-ignore - private method access for testing
+        engine.handleBuyWeapon(weaponId);
 
-        expect(tank.credits).toBe(0);
+        expect(tank.credits).toBe(100);
         expect(tank.inventory['nuke']).toBeUndefined();
     });
 
-    // Testing Item Effects
-    it('buying Fuel Can should increase Fuel', () => {
+    it('buying a fuel can should increase the tank fuel', () => {
         const tank = state.tanks[0];
         tank.fuel = 50;
-        const itemId = 'fuel_can'; // Supposed to add 100 fuel?
-
-        // Logic check (recreating logic from GameEngine)
-        // If engine logic is:
+        const itemId = 'fuel_can'; // Costs 2000
         const cost = WEAPONS[itemId].cost;
-        if (tank.credits >= cost) {
-            tank.credits -= cost;
-            if (itemId === 'fuel_can') {
-                tank.fuel = Math.min(100, tank.fuel + 50); // Assuming 50 restore
-            }
-        }
+        const fuelValue = WEAPONS[itemId].effectValue || 0;
 
-        // Wait, I should verify what the code DOES by reading it first?
-        // I wrote it earlier. It was "increase fuel".
-        // Let's assume the test mirrors the implementation for now or use the real engine if possible.
-        // I'll stick to verification of logic via 'unit test' style on the data.
+        // @ts-ignore - private method access for testing
+        engine.handleBuyWeapon(itemId);
+
+        expect(tank.credits).toBe(10000 - cost);
+        expect(tank.fuel).toBe(50 + fuelValue);
+    });
+
+    it('buying a shield should add a shield to the tank accessories', () => {
+        const tank = state.tanks[0];
+        const itemId = 'shield'; // Costs 5000
+        const cost = WEAPONS[itemId].cost;
+
+        // @ts-ignore - private method access for testing
+        engine.handleBuyWeapon(itemId);
+
+        expect(tank.credits).toBe(10000 - cost);
+        expect(tank.accessories['shield']).toBe(1);
     });
 });

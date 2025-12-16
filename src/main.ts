@@ -28,6 +28,7 @@ const init = () => {
 
   const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
   const engine = new GameEngine(canvas);
+  (window as any).game = engine; // Expose for testing/debugging
   engine.start();
 
   new TouchControls(engine.inputManager);

@@ -10,6 +10,8 @@ import { PlayerInputSystem } from '../systems/PlayerInputSystem';
 import { AISystem } from '../systems/AISystem';
 import { ShopSystem } from '../systems/ShopSystem';
 import { GameFlowSystem } from '../systems/GameFlowSystem';
+import { WEAPONS, WEAPON_ORDER } from './WeaponData';
+
 export class GameEngine {
     private canvas: HTMLCanvasElement;
     // private ctx: CanvasRenderingContext2D; // Moved to RenderSystem
@@ -55,9 +57,9 @@ export class GameEngine {
 
         // Systems
         this.terrainSystem = new TerrainSystem(CONSTANTS.SCREEN_WIDTH, CONSTANTS.SCREEN_HEIGHT);
-        this.physicsSystem = new PhysicsSystem(this.terrainSystem);
         this.uiManager = new UIManager();
         this.soundManager = new SoundManager();
+        this.physicsSystem = new PhysicsSystem(this.terrainSystem, this.soundManager);
         this.renderSystem = new RenderSystem(this.canvas, this.terrainSystem);
         this.gameSetupSystem = new GameSetupSystem(this.terrainSystem, this.soundManager);
         this.playerInputSystem = new PlayerInputSystem(
@@ -505,8 +507,17 @@ export class GameEngine {
             });
         });
 
+        this.state.phase = GamePhase.AIMING;
+        this.soundManager.playUI();
+    }
 
-
+    private getTestInventory() {
+        const inv: Record<string, number> = {};
+        for (const w in WEAPONS) {
+            inv[w] = 100;
+        }
+        return inv;
+    }
 
     private render() {
         this.renderSystem.render(this.state);

@@ -651,3 +651,4 @@ export class UIManager {
     }
     public onSetShield: (id: string) => void = () => { };
 }
+// End of UIManager

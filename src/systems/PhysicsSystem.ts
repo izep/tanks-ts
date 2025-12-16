@@ -1,12 +1,15 @@
 import { type GameState, GamePhase, type ProjectileState, CONSTANTS } from '../core/GameState';
 import { TerrainSystem } from './TerrainSystem';
 import { WEAPONS } from '../core/WeaponData';
+import { SoundManager } from '../core/SoundManager';
 
 export class PhysicsSystem {
     private terrainSystem: TerrainSystem;
+    private soundManager: SoundManager;
 
-    constructor(terrainSystem: TerrainSystem) {
+    constructor(terrainSystem: TerrainSystem, soundManager: SoundManager) {
         this.terrainSystem = terrainSystem;
+        this.soundManager = soundManager;
     }
 
     public update(state: GameState, dt: number) {
@@ -97,7 +100,7 @@ export class PhysicsSystem {
                         break;
                     }
                 }
-            } else if (proj.weaponType === 'digger') {
+            } else if (proj.weaponType === 'digger' || proj.weaponType === 'baby_digger' || proj.weaponType === 'heavy_digger') {
                 // Digger Logic
                 proj.vx += state.wind * dt * 0.1; // Less wind effect
                 proj.vy += state.gravity * dt * 10;
@@ -110,6 +113,28 @@ export class PhysicsSystem {
                     // We are underground. Dig!
                     this.terrainSystem.explode(state, proj.x, proj.y, 10); // Small tunnel radius
                 }
+            } else if (proj.weaponType === 'sandhog' || proj.weaponType === 'baby_sandhog' || proj.weaponType === 'heavy_sandhog') {
+                 // Sandhog Logic: Like digger but explodes at end
+                 // Move
+                 proj.vx += state.wind * dt * 0.1;
+                 proj.vy += state.gravity * dt * 10;
+                 proj.x += proj.vx * dt;
+                 proj.y += proj.vy * dt;
+
+                 const groundY = this.terrainSystem.getGroundY(Math.floor(proj.x));
+                 if (proj.y > groundY) {
+                     // Digging
+                     this.terrainSystem.explode(state, proj.x, proj.y, 8);
+                     // Explode if we hit bottom of screen? or max depth?
+                     // For now, let it dig until offscreen or collision with tank.
+                     // Sandhog typically digs until it hits something or runs out of time?
+                     // In Tanks, it often digs until it hits bottom or tank.
+                     if (proj.y >= CONSTANTS.SCREEN_HEIGHT - 10) {
+                         collided = true;
+                         toRemove.push(index);
+                         this.triggerExplosion(state, proj.x, proj.y, proj, newQueue);
+                     }
+                 }
             } else if (proj.weaponType === 'napalm_particle') {
                 // Napalm Particle Logic (Simple falling, burns on contact)
                 proj.vy += state.gravity * dt * 5; // Light gravity
@@ -214,8 +239,9 @@ export class PhysicsSystem {
                         toRemove.push(index);
                         this.triggerExplosion(state, proj.x, proj.y, proj, newQueue);
                     }
-                } else if (proj.weaponType === 'digger') {
-                    // Digger keeps going until offscreen or hits tank (handled inside Digger loop branch?)
+                } else if (proj.weaponType === 'digger' || proj.weaponType === 'baby_digger' || proj.weaponType === 'heavy_digger' ||
+                           proj.weaponType === 'sandhog' || proj.weaponType === 'baby_sandhog' || proj.weaponType === 'heavy_sandhog') {
+                    // Digger/Sandhog keeps going until offscreen or hits tank (handled inside Digger loop branch?)
                     // Actually Digger loop handled movement. Bounds/Tank collision check needed.
                     // We check tank collision here for Digger too.
                     for (const tank of state.tanks) {
@@ -279,7 +305,8 @@ export class PhysicsSystem {
         // Optim: Don't check terrain for 'digger' here, handled in loop?
         // Actually keep it generic. Digger needs special casing in calling code.
         // Calling call checks weapon type.
-        if (proj.weaponType === 'digger') return false;
+        if (proj.weaponType === 'digger' || proj.weaponType === 'baby_digger' || proj.weaponType === 'heavy_digger' ||
+            proj.weaponType === 'sandhog' || proj.weaponType === 'baby_sandhog' || proj.weaponType === 'heavy_sandhog') return false;
 
         const groundY = this.terrainSystem.getGroundY(x);
         if (y >= groundY) return true;
@@ -297,12 +324,19 @@ export class PhysicsSystem {
     }
 
     private triggerExplosion(state: GameState, x: number, y: number, proj?: any, newQueue?: any[]) {
+        if (proj) {
+            const owner = state.tanks.find(t => t.id === proj.ownerId);
+            if (owner) {
+                owner.lastShotImpact = { x: x, y: y };
+            }
+        }
+
         const weaponId = proj?.weaponType || 'missile';
         const weaponStats = WEAPONS[weaponId] || WEAPONS['missile'];
         const radius = weaponStats.radius;
 
         // Special Logic based on type
-        if (weaponStats.type === 'dirt') {
+        if (weaponStats.type === 'dirt' || weaponStats.type === 'dirt_charge') {
             // Dirt bomb - check if it hit a tank, if so position dirt at tank's Y (higher Y = visually below tank)
             let dirtX = x;
             let dirtY = y;
@@ -320,7 +354,36 @@ export class PhysicsSystem {
                 }
             }
 
-            this.terrainSystem.addTerrain(state, dirtX, dirtY, radius);
+            if (weaponStats.type === 'dirt_charge') {
+                // Wedge shape for dirt charge (simplified to radius for now, or multiple circles)
+                // Let's spawn a cluster
+                this.terrainSystem.addTerrain(state, dirtX, dirtY, radius);
+                this.terrainSystem.addTerrain(state, dirtX - 10, dirtY + 10, radius * 0.8);
+                this.terrainSystem.addTerrain(state, dirtX + 10, dirtY + 10, radius * 0.8);
+            } else {
+                this.terrainSystem.addTerrain(state, dirtX, dirtY, radius);
+            }
+        } else if (weaponStats.type === 'liquid_dirt') {
+             // Liquid Dirt: fill holes? For now, add terrain but trigger settling heavily?
+             // Or just add terrain. "Oozes out" -> we can rely on settling algorithm if we mark it dirty.
+             this.terrainSystem.addTerrain(state, x, y, 20); // Small start
+             // We can force settling or add more
+             this.terrainSystem.addTerrain(state, x - 10, y + 5, 20);
+             this.terrainSystem.addTerrain(state, x + 10, y + 5, 20);
+             state.terrainDirty = true; // Ensure settling runs
+        } else if (weaponStats.type === 'riot_charge' || weaponStats.type === 'dirt_destroyer') {
+            // Destroys wedge or sphere.
+            this.terrainSystem.explode(state, x, y, radius);
+        } else if (weaponStats.type === 'sandhog') {
+            // Sandhog: Tunneling explosive.
+            // If it's a sub-munition (explosion), it explodes.
+            // But main projectile logic might be different.
+            // Assuming this is the final explosion.
+            this.terrainSystem.explode(state, x, y, radius);
+        } else if (weaponStats.type === 'laser') {
+             // Laser usually fires instantly, but if it's a projectile here...
+             // If projectile, just explode.
+             this.terrainSystem.explode(state, x, y, radius);
         } else if (weaponStats.type === 'napalm' && newQueue) {
             // Napalm: Spawn particles
             for (let i = 0; i < 20; i++) {
@@ -343,6 +406,9 @@ export class PhysicsSystem {
             this.terrainSystem.explode(state, x, y, 20);
         } else if (weaponId === 'napalm_particle') {
             this.terrainSystem.explode(state, x, y, 10);
+        } else if (weaponStats.type === 'earth_disrupter') {
+             // Force settling
+             state.terrainDirty = true;
         } else {
             this.terrainSystem.explode(state, x, y, radius);
         }
@@ -380,6 +446,7 @@ export class PhysicsSystem {
                 elapsed: 0,
                 color: weaponStats.color || 'orange'
             });
+            this.soundManager.playExplosion();
         }
 
         // Damage Tanks
@@ -408,6 +475,7 @@ export class PhysicsSystem {
 
                         if (damage > 0) {
                             tank.health -= damage;
+                            this.soundManager.playHit();
                             console.log(`Tank ${tank.name} took ${damage} damage! Remaining: ${tank.health}`);
                             if (tank.health <= 0) {
                                 tank.isDead = true;

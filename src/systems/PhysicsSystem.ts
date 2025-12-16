@@ -189,6 +189,11 @@ export class PhysicsSystem {
 
             // Check Collision
             if (this.checkCollision(state, proj)) {
+                const owner = state.tanks.find(t => t.id === proj.ownerId);
+                if (owner) {
+                    owner.lastShotImpact = { x: proj.x, y: proj.y };
+                }
+
                 if (proj.weaponType === 'segway' && proj.state !== 'rolling') {
                     // Start Rolling
                     proj.state = 'rolling';

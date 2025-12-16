@@ -149,6 +149,7 @@ export class GameEngine {
                         } else {
                             console.log("Round Over - Going to Shop");
                             this.state.phase = GamePhase.SHOP;
+                            this.handleAiShopping();
                         }
                     } else {
                         this.physicsSystem.nextTurn(this.state);
@@ -323,9 +324,10 @@ export class GameEngine {
             // Allow reroll of logic for visualization? No, just decide and fire.
             // Python version effectively did both instantlyframe of fire.
 
-            const decision = tank.aiController.decideShot(this.state, this.state.currentPlayerIndex);
+            const decision = tank.aiController.decideShot(this.state, this.state.currentPlayerIndex, this.terrainSystem);
             tank.angle = decision.angle;
             tank.power = decision.power;
+            tank.currentWeapon = decision.weapon;
 
             // Fire
             this.soundManager.playFire();
@@ -341,8 +343,9 @@ export class GameEngine {
         }
     }
 
-    private handleBuyWeapon(weaponId: string) {
-        const tank = this.state.tanks[this.state.currentPlayerIndex];
+    private handleBuyWeapon(weaponId: string, tankId?: number) {
+        const tank = tankId ? this.state.tanks.find(t => t.id === tankId) : this.state.tanks[this.state.currentPlayerIndex];
+        if (!tank) return;
         const weapon = WEAPONS[weaponId];
 
         if (tank.credits >= weapon.cost) {
@@ -516,5 +519,19 @@ export class GameEngine {
     private render() {
         this.renderSystem.render(this.state);
         this.uiManager.update(this.state);
+    }
+
+    private handleAiShopping() {
+        this.state.tanks.forEach(tank => {
+            if (tank.isAi && tank.aiController) {
+                const purchases = tank.aiController.makePurchases(tank);
+                for (const itemId in purchases) {
+                    const quantity = purchases[itemId];
+                    for (let i = 0; i < quantity; i++) {
+                        this.handleBuyWeapon(itemId, tank.id);
+                    }
+                }
+            }
+        });
     }
 }

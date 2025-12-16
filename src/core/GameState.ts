@@ -44,6 +44,7 @@ export interface TankState {
   teamId?: number; // 0 = no team (FFA)
   lastWords?: string;
   sayTimer?: number;
+  lastShotImpact?: { x: number, y: number };
 }
 
 export interface ProjectileState {

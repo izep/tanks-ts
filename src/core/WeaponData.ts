@@ -6,7 +6,7 @@ export interface WeaponStats {
     color: string;
     description: string;
     // Special properties
-    type?: 'missile' | 'mirv' | 'nuke' | 'dirt' | 'roller' | 'digger' | 'napalm' | 'item' | 'bouncer';
+    type?: 'missile' | 'mirv' | 'nuke' | 'dirt' | 'roller' | 'digger' | 'napalm' | 'item' | 'bouncer' | 'riot_charge' | 'sandhog' | 'dirt_destroyer' | 'liquid_dirt' | 'dirt_charge' | 'earth_disrupter' | 'plasma' | 'laser';
     effectValue?: number; // e.g., fuel amount, shield count
 }
 
@@ -17,20 +17,40 @@ export const WEAPON_ORDER = [
     'nuke',
     'mirv',
     'death_head',
-    'dirt_bomb',
-    'digger', // or Tunnel
+    'funky_bomb',
+    'leapfrog',
+    'tracer',
+    // Earth Destroying
+    'riot_charge',
+    'riot_blast',
+    'riot_bomb',
+    'heavy_riot_bomb',
+    'baby_digger',
+    'digger',
+    'heavy_digger',
+    'baby_sandhog',
+    'sandhog',
+    'heavy_sandhog',
+    // Earth Producing
+    'dirt_clod',
+    'dirt_ball',
+    'ton_of_dirt',
+    'liquid_dirt',
+    'dirt_charge',
+    'earth_disrupter',
+    // Energy Weapons
+    'plasma_blast',
+    'laser',
+    // Other
     'napalm',
     'hot_napalm',
-    'funky_bomb',
-    'riot_bomb',
     'segway', // Roller placeholder
     'heavy_roller',
-    'leapfrog', // New
-    'fuel_can', // Item
-    'shield',   // Item
-    'parachute', // Item
-    'battery',  // Item
-    'tracer'    // New visual
+    // Items
+    'fuel_can',
+    'shield',
+    'parachute',
+    'battery',
 ];
 
 export const WEAPONS: Record<string, WeaponStats> = {
@@ -67,14 +87,77 @@ export const WEAPONS: Record<string, WeaponStats> = {
         description: 'Splits into multiple warheads.',
         type: 'mirv'
     },
-    'dirt_bomb': {
-        name: 'Dirt Bomb',
+    'dirt_clod': {
+        name: 'Dirt Clod',
         cost: 5000,
-        radius: 50,
-        damage: 10,
-        color: '#8B4513',
-        description: 'Creates terrain instead of destroying it.',
+        radius: 20,
+        damage: 0,
+        color: '#A0522D',
+        description: 'Explodes into a sphere of dirt.',
         type: 'dirt'
+    },
+    'dirt_ball': {
+        name: 'Dirt Ball',
+        cost: 5000,
+        radius: 35,
+        damage: 0,
+        color: '#8B4513',
+        description: 'A larger form of Dirt Clod.',
+        type: 'dirt'
+    },
+    'ton_of_dirt': {
+        name: 'Ton of Dirt',
+        cost: 6750,
+        radius: 70,
+        damage: 0,
+        color: '#5C4033',
+        description: 'A very large Dirt Ball.',
+        type: 'dirt'
+    },
+    'liquid_dirt': {
+        name: 'Liquid Dirt',
+        cost: 5000,
+        radius: 0,
+        damage: 0,
+        color: '#D2B48C',
+        description: 'Oozes out where it lands, filling holes.',
+        type: 'liquid_dirt'
+    },
+    'dirt_charge': {
+        name: 'Dirt Charge',
+        cost: 5000,
+        radius: 0,
+        damage: 0,
+        color: '#9B7653',
+        description: 'Expels a cloud of dirt in a wedge shape.',
+        type: 'dirt_charge'
+    },
+    'earth_disrupter': {
+        name: 'Earth Disrupter',
+        cost: 5000,
+        radius: 0,
+        damage: 0,
+        color: '#000000',
+        description: 'Forces all suspended dirt to settle.',
+        type: 'earth_disrupter'
+    },
+    'plasma_blast': {
+        name: 'Plasma Blast',
+        cost: 9000,
+        radius: 75,
+        damage: 200,
+        color: '#00FFFF',
+        description: 'Expels radioactive energy from your tank.',
+        type: 'plasma'
+    },
+    'laser': {
+        name: 'Laser',
+        cost: 5000,
+        radius: 0,
+        damage: 150,
+        color: '#FF0000',
+        description: 'Shoots a high-intensity beam of light.',
+        type: 'laser'
     },
     'funky_bomb': {
         name: 'Funky Bomb',
@@ -112,9 +195,9 @@ export const WEAPONS: Record<string, WeaponStats> = {
     },
     'digger': {
         name: 'Digger',
-        cost: 1000,
-        radius: 5, // Small explosion
-        damage: 20,
+        cost: 2500,
+        radius: 0,
+        damage: 0,
         color: '#888888',
         description: 'Digs a tunnel through terrain.',
         type: 'digger'
@@ -137,14 +220,86 @@ export const WEAPONS: Record<string, WeaponStats> = {
         description: 'More intense burn.',
         type: 'napalm'
     },
+    'riot_charge': {
+        name: 'Riot Charge',
+        cost: 2000,
+        radius: 36,
+        damage: 0,
+        color: '#D3D3D3',
+        description: 'Destroys a wedge-shaped section of dirt from your turret.',
+        type: 'riot_charge'
+    },
+    'riot_blast': {
+        name: 'Riot Blast',
+        cost: 5000,
+        radius: 60,
+        damage: 0,
+        color: '#A9A9A9',
+        description: 'A larger version of the Riot Charge.',
+        type: 'riot_charge'
+    },
+    'heavy_riot_bomb': {
+        name: 'Heavy Riot Bomb',
+        cost: 4750,
+        radius: 45,
+        damage: 0,
+        color: '#E0E0E0',
+        description: 'A scaled up version of Riot Bomb.',
+        type: 'dirt_destroyer'
+    },
+    'baby_digger': {
+        name: 'Baby Digger',
+        cost: 3000,
+        radius: 0,
+        damage: 0,
+        color: '#C0C0C0',
+        description: 'Tunnels through terrain when it hits.',
+        type: 'digger'
+    },
+    'heavy_digger': {
+        name: 'Heavy Digger',
+        cost: 6750,
+        radius: 0,
+        damage: 0,
+        color: '#696969',
+        description: 'The largest Digger-weapon available.',
+        type: 'digger'
+    },
+    'baby_sandhog': {
+        name: 'Baby Sandhog',
+        cost: 10000,
+        radius: 0,
+        damage: 50,
+        color: '#DAA520',
+        description: 'Tunnels and contains a small explosive charge.',
+        type: 'sandhog'
+    },
+    'sandhog': {
+        name: 'Sandhog',
+        cost: 16750,
+        radius: 0,
+        damage: 80,
+        color: '#B8860B',
+        description: 'Contains more warheads than the Baby Sandhog.',
+        type: 'sandhog'
+    },
+    'heavy_sandhog': {
+        name: 'Heavy Sandhog',
+        cost: 25000,
+        radius: 0,
+        damage: 150,
+        color: '#808000',
+        description: 'Can potentially destroy the world.',
+        type: 'sandhog'
+    },
     'riot_bomb': {
         name: 'Riot Bomb',
         cost: 5000,
-        radius: 60,
+        radius: 30,
         damage: 0, // No damage
         color: '#FFFFFF',
-        description: 'Creates dirt spheres (Inverse explosion).',
-        type: 'dirt'
+        description: 'Destroys a spherical section of dirt.',
+        type: 'dirt_destroyer'
     },
     'heavy_roller': {
         name: 'Heavy Roller',

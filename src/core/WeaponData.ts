@@ -118,7 +118,7 @@ export const WEAPONS: Record<string, WeaponStats> = {
         cost: 5000,
         radius: 0,
         damage: 0,
-        color: '#D2B48C',
+        color: '#E6D2B5',
         description: 'Oozes out where it lands, filling holes.',
         type: 'liquid_dirt'
     },

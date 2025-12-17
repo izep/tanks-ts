@@ -60,10 +60,13 @@ export class PlayerInputSystem {
         if (this.inputManager.isActionTriggered(GameAction.NEXT_WEAPON)) {
             const currentIdx = WEAPON_ORDER.indexOf(tank.currentWeapon);
             let nextIdx = (currentIdx + 1) % WEAPON_ORDER.length;
-            // Scan for weapon we have
+            // Scan for weapon we have and is NOT an item
             let count = 0;
             while (
-                (!tank.inventory[WEAPON_ORDER[nextIdx]] || tank.inventory[WEAPON_ORDER[nextIdx]] === 0) &&
+                (
+                    (!tank.inventory[WEAPON_ORDER[nextIdx]] || tank.inventory[WEAPON_ORDER[nextIdx]] === 0) ||
+                    WEAPONS[WEAPON_ORDER[nextIdx]].type === 'item'
+                ) &&
                 count < WEAPON_ORDER.length
             ) {
                 nextIdx = (nextIdx + 1) % WEAPON_ORDER.length;

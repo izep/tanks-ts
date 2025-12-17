@@ -66,7 +66,7 @@ export class PhysicsSystem {
                              if (tank.health <= 0) tank.isDead = true;
                         } else if (weaponId === 'dirt_particle' || weaponId === 'liquid_dirt_particle') {
                             // Hit tank -> Become dirt at tank position
-                            this.terrainSystem.addTerrain(state, tank.x, tank.y, 4);
+                            this.terrainSystem.addTerrain(state, tank.x, tank.y, 6, WEAPONS['liquid_dirt']?.color);
                             toRemove.push(index);
                         }
                     }
@@ -96,7 +96,8 @@ export class PhysicsSystem {
                     // Stop condition
                     if (Math.abs(proj.vx) < 5) {
                         if (weaponId === 'liquid_dirt_particle' || weaponId === 'dirt_particle') {
-                            this.terrainSystem.addTerrain(state, proj.x, proj.y, 4);
+                            const color = weaponId === 'liquid_dirt_particle' ? WEAPONS['liquid_dirt']?.color : undefined;
+                            this.terrainSystem.addTerrain(state, proj.x, proj.y, 6, color);
                             toRemove.push(index);
                         } else if (weaponId === 'napalm_particle') {
                             // Napalm dies out eventually (handled by elapsedTime below) or stops and burns a bit more
@@ -113,6 +114,7 @@ export class PhysicsSystem {
                 }
                 return; // Skip standard logic
             } else if (weaponId === 'riot_particle') {
+                // Should not happen now as Riot Charge is instant, but kept for safety/legacy
                  proj.vy += state.gravity * dt * 5;
                  proj.x += proj.vx * dt;
                  proj.y += proj.vy * dt;
@@ -302,14 +304,21 @@ export class PhysicsSystem {
                     owner.lastShotImpact = { x: proj.x, y: proj.y };
                 }
 
-                if (proj.weaponType === 'segway' && proj.state !== 'rolling') {
-                    // Start Rolling
+                if (proj.weaponType === 'segway') {
+                    // Start Rolling Unconditionally on ground contact
                     proj.state = 'rolling';
-                    // Dampen velocity on impact to prevent immediate explosion
-                    proj.vx *= 0.5;
+                    // Preserve some velocity but clamp it to be safe, don't zero it or explode
+                    // Dampen velocity to prevent immediate explosion from speed check
+                    proj.vx *= 0.8;
                     proj.vy = 0;
+
                     const groundY = this.terrainSystem.getGroundY(Math.floor(proj.x));
                     proj.y = groundY;
+
+                    // Give a small nudge if stopped to ensure it rolls
+                    if (Math.abs(proj.vx) < 10) {
+                        proj.vx = (proj.vx >= 0 ? 1 : -1) * 20;
+                    }
                 } else if (proj.weaponType === 'leapfrog') {
                     // Bouncer Logic
                     proj.bounces = (proj.bounces || 0) + 1;
@@ -418,13 +427,11 @@ export class PhysicsSystem {
 
         // --- Explosion Logic based on Type ---
         if (weaponStats.type === 'dirt_charge') {
-            // Should have been handled by fireProjectile as particles, but if here, do fallback
-            // This case might be obsolete if fireProjectile handles it, but keeps safety.
              this.terrainSystem.addTerrain(state, x, y, radius);
         } else if (weaponStats.type === 'liquid_dirt') {
              // Spawn Liquid Dirt Particles
              if (newQueue) {
-                 for (let i = 0; i < 30; i++) {
+                 for (let i = 0; i < 15; i++) { // Reduced count for performance
                      const angle = Math.random() * 360;
                      const speed = Math.random() * 50 + 20;
                      const rad = (angle * Math.PI) / 180;
@@ -443,7 +450,7 @@ export class PhysicsSystem {
              }
         } else if (weaponStats.type === 'napalm' && newQueue) {
             // Spawn Napalm Particles
-            for (let i = 0; i < 40; i++) {
+            for (let i = 0; i < 15; i++) { // Reduced count
                 const sprayAngle = Math.random() * 360;
                 const rad = (sprayAngle * Math.PI) / 180;
                 const speed = Math.random() * 100 + 50;
@@ -462,7 +469,7 @@ export class PhysicsSystem {
             }
             this.terrainSystem.explode(state, x, y, 20); // Initial blast
         } else if (weaponStats.type === 'riot_charge') {
-             // Should be particles, but fallback logic
+             // Legacy fallback
              this.terrainSystem.explode(state, x, y, radius);
         } else if (weaponStats.type === 'earth_disrupter') {
              state.terrainDirty = true;
@@ -691,13 +698,38 @@ export class PhysicsSystem {
         const startY = tank.y - Math.sin(rad) * barrelLength;
         const speed = power * 0.5;
 
-        // --- Wedge/Particle Fire Logic ---
-        if (weaponId === 'dirt_charge' || weaponId === 'riot_charge' || weaponId === 'riot_blast') {
-            const count = 30;
-            const particleType = weaponId === 'dirt_charge' ? 'dirt_particle' : 'riot_particle';
+        // --- Instant Cone Logic (Riot Weapons) ---
+        if (weaponId === 'riot_charge' || weaponId === 'riot_blast') {
+             // Instant effect
+             const spread = 45; // Degrees
+             const length = weaponId === 'riot_blast' ? 150 : 100;
+             this.terrainSystem.clearConicSection(state, startX, startY, angle, length, spread);
+
+             // Visual flash
+             state.explosions.push({
+                 id: Math.random(),
+                 x: startX + Math.cos(rad) * length * 0.5,
+                 y: startY - Math.sin(rad) * length * 0.5,
+                 maxRadius: 10,
+                 currentRadius: 0,
+                 duration: 0.2,
+                 elapsed: 0,
+                 color: 'white'
+             });
+             this.soundManager.playExplosion(); // Or custom sound?
+
+             state.phase = GamePhase.TERRAIN_SETTLING; // Skip flying
+             state.lastExplosionTime = performance.now();
+             return;
+        }
+
+        // --- Particle Fire Logic ---
+        if (weaponId === 'dirt_charge') {
+            const count = 20; // Reduced for performance
+            const particleType = 'dirt_particle';
 
             for (let i = 0; i < count; i++) {
-                 const spread = (Math.random() - 0.5) * 40; // 40 degree spread
+                 const spread = (Math.random() - 0.5) * 40;
                  const newRad = ((angle + spread) * Math.PI) / 180;
                  const pSpeed = speed * (0.8 + Math.random() * 0.4);
 

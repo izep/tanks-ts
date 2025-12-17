@@ -630,15 +630,25 @@ export class UIManager {
     }
 
     private getWeaponIconPath(id: string): string {
-        if (id === 'death_head') return '/src/assets/weapons/deaths_head.svg';
-        if (id === 'dirt_clod') return '/src/assets/weapons/dirt_ball.svg';
-        if (id === 'segway') return '/src/assets/weapons/roller.svg';
-        if (id === 'leapfrog') return '/src/assets/weapons/leap_frog.svg';
-        if (id === 'shield') return '/src/assets/misc/shield.svg';
-        if (id === 'parachute') return '/src/assets/misc/parachute.svg';
-        if (id === 'fuel_can') return '/src/assets/misc/fuel_tank.svg';
-        if (id === 'battery') return '/src/assets/misc/battery.svg';
-        return `/src/assets/weapons/${id}.svg`;
+        // Resolve using Vite's URL handling or absolute paths if public
+        // Assuming src/assets is copied to public or handled by Vite via imports.
+        // If 'src/assets' is not in public, direct /src links work in dev but break in prod.
+        // However, the issue described is dev mode failure.
+        // A robust way is to rely on relative paths or dynamic imports if possible.
+        // For now, let's fix the explicit mapping and path construction.
+
+        let filename = `${id}.svg`;
+
+        if (id === 'death_head') filename = 'deaths_head.svg';
+        else if (id === 'dirt_clod') filename = 'dirt_ball.svg';
+        else if (id === 'segway') filename = 'roller.svg';
+        else if (id === 'leapfrog') filename = 'leap_frog.svg';
+        else if (id === 'shield') return new URL('../assets/misc/shield.svg', import.meta.url).href;
+        else if (id === 'parachute') return new URL('../assets/misc/parachute.svg', import.meta.url).href;
+        else if (id === 'fuel_can') return new URL('../assets/misc/fuel_tank.svg', import.meta.url).href;
+        else if (id === 'battery') return new URL('../assets/misc/battery.svg', import.meta.url).href;
+
+        return new URL(`../assets/weapons/${filename}`, import.meta.url).href;
     }
 
     private triggerWeaponSelect(id: string) {

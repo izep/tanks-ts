@@ -19,7 +19,6 @@ export const WEAPON_ORDER = [
     'death_head',
     'funky_bomb',
     'leapfrog',
-    'tracer',
     // Earth Destroying
     'riot_charge',
     'riot_blast',
@@ -119,7 +118,7 @@ export const WEAPONS: Record<string, WeaponStats> = {
         cost: 5000,
         radius: 0,
         damage: 0,
-        color: '#D2B48C',
+        color: '#E6D2B5',
         description: 'Oozes out where it lands, filling holes.',
         type: 'liquid_dirt'
     },
@@ -358,14 +357,5 @@ export const WEAPONS: Record<string, WeaponStats> = {
         description: 'Restores 10 health points.',
         type: 'item',
         effectValue: 10
-    },
-    'tracer': {
-        name: 'Tracer (5)',
-        cost: 500,
-        radius: 10,
-        damage: 20,
-        color: '#FF0000',
-        description: 'Cheap, leaves a clear trail.',
-        type: 'missile' // Normal physics
     }
 };

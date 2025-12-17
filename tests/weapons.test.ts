@@ -14,6 +14,7 @@ vi.mock('../src/systems/TerrainSystem', () => {
             explode(state: any, x: number, y: number, r: number) { console.log('MockExplode at', x, y); }
             addTerrain(state: any, x: number, y: number, r: number) { }
             settle(state: any) { return false; }
+            isSolid(x: number, y: number) { return y >= 500; }
         }
     };
 });
@@ -22,10 +23,16 @@ describe('PhysicsSystem Weapons', () => {
     let physics: PhysicsSystem;
     let terrain: TerrainSystem;
     let state: GameState;
+    let soundManagerMock: any;
 
     beforeEach(() => {
         terrain = new TerrainSystem(800, 600);
-        physics = new PhysicsSystem(terrain);
+        soundManagerMock = {
+            playExplosion: vi.fn(),
+            playHit: vi.fn(),
+            playShoot: vi.fn()
+        };
+        physics = new PhysicsSystem(terrain, soundManagerMock);
 
         state = {
             phase: GamePhase.PROJECTILE_FLYING,
@@ -67,30 +74,5 @@ describe('PhysicsSystem Weapons', () => {
         // We expect it to survive
         expect(p?.bounces).toBe(1);
         expect(p?.vy).toBeLessThan(0); // Moving up
-    });
-
-    it('Tracer should have longer trail limit', () => {
-        // We can't easily test trail limit logic without mocking many updates or inspecting internal logic,
-        // but we can verify it doesn't crash.
-        // Actually, we can just push a tracer and update many times.
-        const tracer = {
-            id: 't-1', x: 100, y: 100, vx: 10, vy: 0,
-            weaponType: 'tracer', ownerId: 1, elapsedTime: 0, trail: []
-        };
-        state.projectiles.push(tracer);
-
-        // Add 60 items to trail manually to simulate history
-        for (let i = 0; i < 60; i++) tracer.trail.push({ x: 0, y: 0 });
-
-        physics.update(state, 0.01);
-        // Logic: if > maxTrail shift.
-        // maxTrail for tracer is 300.
-        // trail length 60 > 50 (standard). 
-        // If standard, it would shift. If tracer, it keeps.
-
-        // Wait, shifting happens on update.
-        // If it was standard, 61 -> 50.
-        // If tracer, 61 -> 61 (until 300).
-        // Let's rely on code review for this specific constant, but test ensures no crash.
     });
 });

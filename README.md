@@ -41,3 +41,22 @@ npm run preview
 ```bash
 npm test
 ```
+
+## Deployment
+
+This project is configured to automatically deploy to GitHub Pages on every merge to the `main` branch.
+
+### Setup GitHub Pages (First Time Only)
+
+1. Go to your repository Settings → Pages
+2. Under "Build and deployment" → Source, select "GitHub Actions"
+3. The workflow will automatically deploy on the next push to `main`
+
+The site will be available at: `https://izep.github.io/tanks-ts/`
+
+### Manual Deployment
+
+You can also deploy manually using:
+```bash
+npm run deploy
+```

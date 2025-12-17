@@ -138,12 +138,16 @@ The game uses a systems-based architecture where each system is responsible for 
 
 ### Game Phases
 
-The game progresses through defined phases (enum `GamePhase`):
+The game progresses through defined phases (constant `GamePhase`):
 - `SETUP` - Game initialization
-- `PLAYER_TURN` - Player is aiming/adjusting
+- `AIMING` - Player is aiming and adjusting angle/power
+- `FIRING` - Weapon firing phase
 - `PROJECTILE_FLYING` - Projectile is in flight
-- `POST_IMPACT` - Handling explosions and terrain destruction
+- `EXPLOSION` - Handling explosion animations and effects
+- `TERRAIN_SETTLING` - Terrain particles settling after destruction
+- `DEATH_SEQUENCE` - Handling tank death animations
 - `SHOP` - Between-round shopping phase
+- `GAME_OVER` - Game has ended
 
 ## Important Implementation Details
 

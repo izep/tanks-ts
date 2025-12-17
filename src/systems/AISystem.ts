@@ -1,16 +1,19 @@
 import { type GameState } from '../core/GameState';
 import { PhysicsSystem } from './PhysicsSystem';
 import { SoundManager } from '../core/SoundManager';
+import { TerrainSystem } from './TerrainSystem';
 
 export class AISystem {
     private physicsSystem: PhysicsSystem;
     private soundManager: SoundManager;
+    private terrainSystem: TerrainSystem;
     private aiTurnTimer: number = 0;
     private readonly AI_TURN_DELAY = 1.0; // 1 second delay
 
-    constructor(physicsSystem: PhysicsSystem, soundManager: SoundManager) {
+    constructor(physicsSystem: PhysicsSystem, soundManager: SoundManager, terrainSystem: TerrainSystem) {
         this.physicsSystem = physicsSystem;
         this.soundManager = soundManager;
+        this.terrainSystem = terrainSystem;
     }
 
     public handleAiTurn(state: GameState, dt: number) {
@@ -22,7 +25,7 @@ export class AISystem {
         if (this.aiTurnTimer >= this.AI_TURN_DELAY) {
             this.aiTurnTimer = 0;
 
-            const decision = tank.aiController.decideShot(state, state.currentPlayerIndex);
+            const decision = tank.aiController.decideShot(state, state.currentPlayerIndex, this.terrainSystem);
             tank.angle = decision.angle;
             tank.power = decision.power;
 

@@ -3,11 +3,11 @@ import type { GameState } from '../core/GameState';
 // Simple seeded random number generator (LCG - Linear Congruential Generator)
 class SeededRandom {
     private seed: number;
-    
+
     constructor(seed: number) {
         this.seed = seed;
     }
-    
+
     // Generate a random number between 0 and 1
     next(): number {
         this.seed = (this.seed * 1103515245 + 12345) & 0x7fffffff;
@@ -24,7 +24,17 @@ export class TerrainSystem {
 
     // Colors
     private readonly COLOR_DIRT = 'rgb(139, 69, 19)';
-    // private readonly COLOR_GRASS = 'rgb(34, 139, 34)';
+
+    // Standard VGA Palette (0=Sky/Transparent handled separately)
+    private readonly PALETTE = [
+        '#000000', '#0000AA', '#00AA00', '#00AAAA',
+        '#AA0000', '#AA00AA', '#AA5500', '#AAAAAA',
+        '#555555', '#5555FF', '#55FF55', '#55FFFF',
+        '#FF5555', '#FF55FF', '#FFFF55', '#FFFFFF'
+    ];
+
+    private availableMaps: string[] = [];
+    private mapsLoaded: boolean = false;
 
     private terrainMask: Uint8Array;
     private dirtyColumns: Set<number> = new Set();
@@ -39,15 +49,34 @@ export class TerrainSystem {
         this.terrainMask = new Uint8Array(width * height);
     }
 
-    public generate(gameState: GameState, seed?: number) {
+    public async init() {
+        if (this.mapsLoaded) return;
+        try {
+            const baseUrl = import.meta.env.BASE_URL;
+            const manifestUrl = `${baseUrl}mountains/manifest.json`.replace('//', '/');
+            const res = await fetch(manifestUrl);
+            if (res.ok) {
+                const json = await res.json();
+                if (Array.isArray(json)) {
+                    this.availableMaps = json.filter(s => typeof s === 'string' && s.toLowerCase().endsWith('.mtn'));
+                    console.log(`Loaded ${this.availableMaps.length} maps.`);
+                }
+            }
+        } catch (e) {
+            console.warn("Failed to load map manifest", e);
+        }
+        this.mapsLoaded = true;
+    }
+
+    public async generate(gameState: GameState, seed?: number) {
+        // Ensure manifest is loaded (if not already)
+        if (!this.mapsLoaded) {
+            await this.init();
+        }
+
         this.ctx.clearRect(0, 0, this.width, this.height);
         this.terrainMask.fill(0);
         this.dirtyColumns.clear();
-
-        this.ctx.fillStyle = this.COLOR_DIRT;
-
-        this.ctx.beginPath();
-        this.ctx.moveTo(0, this.height);
 
         // Use seed if provided, otherwise generate new one
         if (seed !== undefined) {
@@ -55,8 +84,145 @@ export class TerrainSystem {
         } else {
             this.terrainSeed = Math.floor(Math.random() * 1000000);
         }
-        
+
         const rng = new SeededRandom(this.terrainSeed);
+
+        // Try to load a random map
+        let mapLoaded = false;
+        if (this.availableMaps.length > 0) {
+            const mapIndex = Math.floor(rng.next() * this.availableMaps.length);
+            const mapName = this.availableMaps[mapIndex];
+            console.log(`Loading map: ${mapName}`);
+            try {
+                mapLoaded = await this.loadAndDrawMtn(mapName);
+            } catch (e) {
+                console.error(`Failed to load map ${mapName}:`, e);
+            }
+        }
+
+        if (!mapLoaded) {
+            console.log("Generating procedural terrain...");
+            this.generateProcedural(rng);
+        }
+
+        gameState.terrainDirty = false;
+    }
+
+    private async loadAndDrawMtn(filename: string): Promise<boolean> {
+        const baseUrl = import.meta.env.BASE_URL;
+        const fileUrl = `${baseUrl}mountains/${filename}`.replace('//', '/');
+        const res = await fetch(fileUrl);
+        if (!res.ok) return false;
+        const buffer = await res.arrayBuffer();
+        const data = new Uint8Array(buffer);
+
+        if (data.length < 18) return false;
+
+        // Header
+        const fileWidth = data[6] | (data[7] << 8);
+
+        // Find Data Start & Palette
+        const HEADER_SIZE = 18;
+        const body = data.subarray(HEADER_SIZE);
+
+        let pixelDataOffset = HEADER_SIZE + 56; // Default fallback (MTTEST location 74)
+        let palette: string[] | null = null;
+
+        // Search for FF FF FF marker
+        let markerIdx = -1;
+        for (let i = 0; i < Math.min(body.length - 3, 200); i++) {
+            if (body[i] === 0xFF && body[i + 1] === 0xFF && body[i + 2] === 0xFF) {
+                markerIdx = i;
+                break;
+            }
+        }
+
+        if (markerIdx >= 0) {
+            const afterMarkerIdx = markerIdx + 3;
+            // Check for MTTEST special case: FF FF BF 00
+            if (afterMarkerIdx + 4 <= body.length &&
+                body[afterMarkerIdx] === 0xFF &&
+                body[afterMarkerIdx + 1] === 0xFF &&
+                body[afterMarkerIdx + 2] === 0xBF &&
+                body[afterMarkerIdx + 3] === 0x00) {
+
+                pixelDataOffset = HEADER_SIZE + afterMarkerIdx + 4;
+            } else {
+                // Standard case: 48 bytes of Palette follow
+                if (afterMarkerIdx + 48 <= body.length) {
+                    // Parse Palette
+                    palette = [];
+                    for (let i = 0; i < 16; i++) {
+                        const r = body[afterMarkerIdx + i * 3];
+                        const g = body[afterMarkerIdx + i * 3 + 1];
+                        const b = body[afterMarkerIdx + i * 3 + 2];
+                        palette.push(`rgb(${r}, ${g}, ${b})`);
+                    }
+                    pixelDataOffset = HEADER_SIZE + afterMarkerIdx + 48;
+                }
+            }
+        }
+
+        // Use custom palette or default
+        const activePalette = palette || this.PALETTE;
+
+        console.log(`Loading MTN: ${filename}, Width: ${fileWidth}, Offset: ${pixelDataOffset}, Palette: ${palette ? 'Custom' : 'Default'}`);
+
+        // Parse Column-Major Data
+        // Each column is terminated by 0x00 BYTE
+        // Pixels are 4-bit packed (High-Low)
+
+        const pixels = data.subarray(pixelDataOffset);
+
+        // Center the mountain
+        const offsetX = Math.floor((this.width - fileWidth) / 2);
+
+        this.ctx.globalCompositeOperation = 'source-over';
+
+        let ptr = 0;
+        for (let x = 0; x < fileWidth; x++) {
+            if (ptr >= pixels.length) break;
+
+            // Read column bytes until terminator 0x00
+            const colBytes: number[] = [];
+            while (ptr < pixels.length && pixels[ptr] !== 0x00) {
+                colBytes.push(pixels[ptr]);
+                ptr++;
+            }
+            if (ptr < pixels.length) ptr++; // Skip 0x00
+
+            // Decode pixels (High -> Low)
+            const colPixels: number[] = [];
+            for (const b of colBytes) {
+                colPixels.push((b >> 4) & 0x0F);
+                colPixels.push(b & 0x0F);
+            }
+
+            // Draw Bottom-Up
+            const startY = this.height - 1;
+
+            for (let i = 0; i < colPixels.length; i++) {
+                const colorIdx = colPixels[i];
+                if (colorIdx > 0 && colorIdx < activePalette.length) {
+                    const canvasX = offsetX + x;
+                    const canvasY = startY - i;
+
+                    if (canvasX >= 0 && canvasX < this.width && canvasY >= 0) {
+                        this.ctx.fillStyle = activePalette[colorIdx];
+                        this.ctx.fillRect(canvasX, canvasY, 1, 1);
+                        this.terrainMask[canvasY * this.width + canvasX] = 1;
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private generateProcedural(rng: SeededRandom) {
+        this.ctx.fillStyle = this.COLOR_DIRT;
+        this.ctx.beginPath();
+        this.ctx.moveTo(0, this.height);
 
         // Multi-octave noise for natural terrain
         const offsets = [rng.next() * 100, rng.next() * 100, rng.next() * 100];
@@ -89,10 +255,8 @@ export class TerrainSystem {
         this.ctx.lineTo(this.width, this.height);
         this.ctx.closePath();
         this.ctx.fill();
-
-        gameState.terrainDirty = false;
     }
-    
+
     // Get the current terrain seed for reproducibility
     public getSeed(): number {
         return this.terrainSeed;

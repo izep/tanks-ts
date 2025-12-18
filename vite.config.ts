@@ -5,5 +5,13 @@ export default defineConfig({
     clearScreen: false,
     server: {
         port: 5173
+    },
+    build: {
+        rollupOptions: {
+            input: {
+                main: 'index.html',
+                viewer: 'viewer.html'
+            }
+        }
     }
 });

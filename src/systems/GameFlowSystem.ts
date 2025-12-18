@@ -56,7 +56,7 @@ export class GameFlowSystem {
         }
     }
 
-    public handleNextRound(state: GameState) {
+    public async handleNextRound(state: GameState) {
         // Just start next round for now
         // TODO: Logic for multiple players shopping
 
@@ -75,7 +75,7 @@ export class GameFlowSystem {
         state.wind = Math.random() * 70 - 35;
         console.log(`Wind changed to: ${state.wind.toFixed(1)}`);
 
-        this.terrainSystem.generate(state);
+        await this.terrainSystem.generate(state);
 
         // Reset positions?
         // Simple respawn

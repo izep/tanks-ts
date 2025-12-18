@@ -72,13 +72,13 @@ export class GameEngine {
         this.shopSystem = new ShopSystem(this.soundManager);
         this.gameFlowSystem = new GameFlowSystem(this.terrainSystem, this.physicsSystem, this.soundManager);
 
-        // Init Terrain
-        this.terrainSystem.generate(this.state);
+        // Init Terrain - Moved to initialize()
+        // this.terrainSystem.generate(this.state);
 
         // UI Bindings
         this.uiManager.onBuyWeapon = (weaponId) => this.shopSystem.handleBuyWeapon(this.state, weaponId);
-        this.uiManager.onNextRound = () => this.gameFlowSystem.handleNextRound(this.state);
-        this.uiManager.onStartGame = (config) => this.gameSetupSystem.handleStartGame(this.state, config);
+        this.uiManager.onNextRound = async () => await this.gameFlowSystem.handleNextRound(this.state);
+        this.uiManager.onStartGame = async (config) => await this.gameSetupSystem.handleStartGame(this.state, config);
         this.uiManager.onSetWeapon = (id) => this.shopSystem.handleSetWeapon(this.state, id);
         this.uiManager.onSetShield = (id) => this.shopSystem.handleSetShield(this.state, id);
         this.uiManager.onRestartGame = () => {
@@ -95,6 +95,11 @@ export class GameEngine {
                 this.inputManager.handleInput(action, active);
             }
         };
+    }
+
+    public async initialize() {
+        await this.terrainSystem.init();
+        await this.terrainSystem.generate(this.state);
     }
 
     public start() {

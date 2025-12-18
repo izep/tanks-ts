@@ -1,4 +1,4 @@
-# Copilot Instructions for Tanks-a-Lot TS
+# Agent Instructions for Tanks-a-Lot TS
 
 ## Project Overview
 

@@ -13,7 +13,7 @@ export class GameSetupSystem {
         this.soundManager = soundManager;
     }
 
-    public handleStartGame(state: GameState, config: any) {
+    public async handleStartGame(state: GameState, config: any) {
         // Init tanks based on config
         const colors = ['red', 'blue', 'green', 'yellow', 'purple', 'cyan'];
         state.tanks = [];
@@ -64,7 +64,7 @@ export class GameSetupSystem {
         state.wind = (Math.random() * 70) - 35;
         console.log(`Initial Wind: ${state.wind.toFixed(1)}`);
 
-        this.terrainSystem.generate(state);
+        await this.terrainSystem.generate(state);
         this.soundManager.playUI(); // Will also resume AudioContext
     }
 

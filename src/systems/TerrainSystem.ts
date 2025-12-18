@@ -184,12 +184,16 @@ export class TerrainSystem {
             if (ptr >= pixels.length) break;
 
             // Read column bytes until terminator 0x00
+            // Add safety limit to prevent reading too much data if terminator is missing
             const colBytes: number[] = [];
-            while (ptr < pixels.length && pixels[ptr] !== 0x00) {
+            const maxBytesPerColumn = this.height; // Max pixels = height, so max bytes = height (2 pixels per byte)
+            while (ptr < pixels.length && pixels[ptr] !== 0x00 && colBytes.length < maxBytesPerColumn) {
                 colBytes.push(pixels[ptr]);
                 ptr++;
             }
-            if (ptr < pixels.length) ptr++; // Skip 0x00
+            if (ptr < pixels.length && pixels[ptr] === 0x00) {
+                ptr++; // Skip 0x00 terminator if found
+            }
 
             // Decode pixels (High -> Low)
             const colPixels: number[] = [];

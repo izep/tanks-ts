@@ -282,11 +282,15 @@ class MtnViewer {
 
                 const colBytes: number[] = [];
                 // Terminated by 'terminator'
-                while (ptr < pixels.length && pixels[ptr] !== terminator) {
+                // Add safety limit to prevent reading too much data if terminator is missing
+                const maxBytesPerColumn = this.height;
+                while (ptr < pixels.length && pixels[ptr] !== terminator && colBytes.length < maxBytesPerColumn) {
                     colBytes.push(pixels[ptr]);
                     ptr++;
                 }
-                if (ptr < pixels.length) ptr++;
+                if (ptr < pixels.length && pixels[ptr] === terminator) {
+                    ptr++; // Skip terminator if found
+                }
 
                 const colPixels: number[] = [];
                 for (const b of colBytes) {

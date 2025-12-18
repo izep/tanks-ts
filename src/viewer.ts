@@ -290,8 +290,17 @@ class MtnViewer {
 
                 const colPixels: number[] = [];
                 for (const b of colBytes) {
-                    colPixels.push((b >> 4) & 0x0F);
-                    colPixels.push(b & 0x0F);
+                    if (b >= 0x80) {
+                        // Control code (e.g., column height) - skip it
+                        continue;
+                    } else if (b < 0x10) {
+                        // Single pixel (0x00-0x0F)
+                        colPixels.push(b);
+                    } else {
+                        // Two pixels packed in nibbles (0x10-0x7F)
+                        colPixels.push((b >> 4) & 0x0F);
+                        colPixels.push(b & 0x0F);
+                    }
                 }
 
                 this.colPixelCounts.push(colPixels.length);

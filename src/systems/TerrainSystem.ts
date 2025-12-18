@@ -170,7 +170,10 @@ export class TerrainSystem {
 
         // Parse Column-Major Data
         // Each column is terminated by 0x00 BYTE
-        // Pixels are 4-bit packed (High-Low)
+        // Pixel encoding:
+        // - Bytes 0x00-0x0F: Single pixel of that color
+        // - Bytes 0x10-0x7F: Two pixels packed as nibbles (high nibble, low nibble)
+        // - Bytes 0x80-0xFF: Control codes (e.g., column height marker) - skip these
 
         const pixels = data.subarray(pixelDataOffset);
 
@@ -191,11 +194,20 @@ export class TerrainSystem {
             }
             if (ptr < pixels.length) ptr++; // Skip 0x00
 
-            // Decode pixels (High -> Low)
+            // Decode pixels with proper handling of control codes
             const colPixels: number[] = [];
             for (const b of colBytes) {
-                colPixels.push((b >> 4) & 0x0F);
-                colPixels.push(b & 0x0F);
+                if (b >= 0x80) {
+                    // Control code (e.g., column height) - skip it
+                    continue;
+                } else if (b < 0x10) {
+                    // Single pixel (0x00-0x0F)
+                    colPixels.push(b);
+                } else {
+                    // Two pixels packed in nibbles (0x10-0x7F)
+                    colPixels.push((b >> 4) & 0x0F);
+                    colPixels.push(b & 0x0F);
+                }
             }
 
             // Draw Bottom-Up

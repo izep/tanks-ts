@@ -22,6 +22,13 @@ export const AIPersonality = {
 
 export type AIPersonality = typeof AIPersonality[keyof typeof AIPersonality];
 
+export interface AiDecision {
+    angle: number;
+    power: number;
+    weapon: string;
+    actions: ('shield' | 'battery')[];
+}
+
 export class AIController {
     public personality: AIPersonality;
     private actualPersonality: AIPersonality;
@@ -29,6 +36,7 @@ export class AIController {
     // Tosser learning
     private lastShotAngle: number | null = null;
     private lastShotPower: number | null = null;
+    private lastTargetId: number | null = null;
 
     constructor(personality: AIPersonality) {
         this.personality = personality;
@@ -40,20 +48,34 @@ export class AIController {
         }
     }
 
-    public decideShot(gameState: GameState, tankIndex: number, terrain: TerrainSystem): { angle: number, power: number, weapon: string } {
+    public decideShot(gameState: GameState, tankIndex: number, terrain: TerrainSystem): AiDecision {
         const tank = gameState.tanks[tankIndex];
         const target = this.chooseTarget(gameState, tankIndex);
+        const actions: ('shield' | 'battery')[] = [];
+
+        // Defense Strategy
+        if (tank.health < 40 && (tank.accessories['shield'] || 0) > 0 && !tank.activeShield) {
+            actions.push('shield');
+        }
 
         if (!target) {
             return {
                 angle: Math.floor(Math.random() * 120) + 30,
                 power: Math.floor(Math.random() * 500) + 300,
-                weapon: 'baby_missile'
+                weapon: 'baby_missile',
+                actions
             };
         }
 
-        // Default weapon selection
-        const weapon = this.chooseWeapon(tank, target);
+        // Reset learning if target changed
+        if (this.lastTargetId !== target.id) {
+            this.lastShotAngle = null;
+            this.lastShotPower = null;
+            this.lastTargetId = target.id;
+        }
+
+        // Weapon Selection
+        const weapon = this.chooseWeapon(tank, target, gameState);
         tank.currentWeapon = weapon;
 
         // Execute Strategy
@@ -75,7 +97,11 @@ export class AIController {
                 shot = this.cyborgShot(gameState, tank, target, terrain); break;
         }
 
-        // Apply randomness based on difficulty (could be added later)
+        // Use Battery if needed
+        if (shot.power > tank.power && (tank.accessories['battery'] || 0) > 0) {
+            actions.push('battery');
+        }
+
         // Ensure bounds
         shot.angle = Math.max(0, Math.min(180, shot.angle));
         shot.power = Math.max(0, Math.min(1000, shot.power));
@@ -84,7 +110,7 @@ export class AIController {
         this.lastShotAngle = shot.angle;
         this.lastShotPower = shot.power;
 
-        return { ...shot, weapon };
+        return { ...shot, weapon, actions };
     }
 
     private chooseTarget(gameState: GameState, tankIndex: number): TankState | null {
@@ -92,11 +118,11 @@ export class AIController {
         const enemies = gameState.tanks.filter((t, i) => i !== tankIndex && t.health > 0);
         if (enemies.length === 0) return null;
 
-        if (this.actualPersonality === AIPersonality.CYBORG) {
-            // Prioritize weakest or richest
+        if (this.actualPersonality === AIPersonality.CYBORG || this.actualPersonality === AIPersonality.SPOILER) {
+            // Prioritize weakest or richest, but also consider ease of hit
             return enemies.reduce((prev, curr) => {
-                const prevScore = (100 - prev.health) + (prev.credits / 100);
-                const currScore = (100 - curr.health) + (curr.credits / 100);
+                const prevScore = (100 - prev.health) + (prev.credits / 50);
+                const currScore = (100 - curr.health) + (curr.credits / 50);
                 return currScore > prevScore ? curr : prev;
             });
         }
@@ -124,7 +150,8 @@ export class AIController {
             minAngle: 0,
             maxAngle: 180,
             angleStep: 2,
-            preferLowArc: true // Heuristic to pick lower angle if multiple solutions
+            preferLowArc: true,
+            ignoreWind: true // Shooter ignores wind (handicap)
         });
         
         if (solution) return solution;
@@ -134,9 +161,9 @@ export class AIController {
     private poolsharkShot(state: GameState, tank: TankState, target: TankState, terrain: TerrainSystem): { angle: number, power: number } {
         // Check if rebound is possible
         if (state.borderMode === 'bounce') {
-            // Try standard shot first
-            let solution = this.solveTrajectory(state, tank, target, terrain);
-            if (solution) return solution;
+            // Try Standard
+             let solution = this.solveTrajectory(state, tank, target, terrain);
+             if (solution && Math.random() > 0.4) return solution; // 60% chance to prefer fancy shot
 
             // Try Virtual Targets (Mirror)
             // Left Wall Mirror
@@ -149,6 +176,8 @@ export class AIController {
 
             const sRight = this.solveTrajectory(state, tank, virtualRight, terrain);
             if (sRight) return sRight;
+            
+            if (solution) return solution;
         }
 
         return this.shooterShot(state, tank, target, terrain);
@@ -157,38 +186,68 @@ export class AIController {
     private tosserShot(tank: TankState, target: TankState): { angle: number, power: number } {
         // Init if null
         if (this.lastShotAngle === null || this.lastShotPower === null) {
-            return this.moronShot();
+            // Start with a guess
+            const dx = target.x - tank.x;
+            const dy = target.y - tank.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            return {
+                angle: dx > 0 ? 45 : 135,
+                power: Math.min(1000, dist * 1.5) // Crude guess
+            };
         }
 
         // Adjust based on last miss
         if (tank.lastShotImpact) {
             const impact = tank.lastShotImpact;
             // Simple heuristic: adjust power for distance
-            const distError = Math.abs(target.x - tank.x) - Math.abs(impact.x - tank.x);
-            
-            if (distError > 0) this.lastShotPower += 50;
-            else this.lastShotPower -= 50;
+            const targetDist = Math.abs(target.x - tank.x);
+            const impactDist = Math.abs(impact.x - tank.x);
+            const error = targetDist - impactDist;
+
+            // If we overshot (impact further than target), reduce power
+            // If we undershot, increase power
+            // Direction matters
+            const firingRight = Math.cos(this.lastShotAngle! * Math.PI / 180) > 0;
+            const targetRight = target.x > tank.x;
+
+            // If we fired in correct direction
+            if (firingRight === targetRight) {
+                // Heuristic: Power is roughly proportional to sqrt(distance)
+                // New Power = Old Power * (TargetDist / ImpactDist)^0.5 ?
+                // Let's use simpler stepping for "Tosser" feel
+                const step = Math.max(10, Math.abs(error) * 0.5);
+                
+                if (impactDist < targetDist) {
+                    this.lastShotPower += step;
+                } else {
+                    this.lastShotPower -= step;
+                }
+            } else {
+                // Wrong direction? Flip angle
+                this.lastShotAngle = 180 - this.lastShotAngle!;
+            }
 
             // Random jitter
-            this.lastShotPower += (Math.random() - 0.5) * 20;
-            this.lastShotAngle += (Math.random() - 0.5) * 5;
+            this.lastShotPower += (Math.random() - 0.5) * 10;
+            this.lastShotAngle += (Math.random() - 0.5) * 2;
         }
 
         return { angle: this.lastShotAngle!, power: this.lastShotPower! };
     }
 
     private chooserShot(state: GameState, tank: TankState, target: TankState, terrain: TerrainSystem): { angle: number, power: number } {
-        // Tries to pick the "safest" shot (high arc usually avoids obstacles)
-        return this.spoilerShot(state, tank, target, terrain);
+        // Chooser tries to pick the "safest" shot (high arc usually avoids obstacles)
+        return this.solveTrajectory(state, tank, target, terrain, {
+             minAngle: 0, maxAngle: 180, angleStep: 2, preferLowArc: false
+        }) || this.moronShot();
     }
 
     private spoilerShot(state: GameState, tank: TankState, target: TankState, terrain: TerrainSystem): { angle: number, power: number } {
-        // Finds the BEST shot (closest to target)
-        // Search high arcs first (usually better for bypassing terrain)
+        // Accurately finds shot
         const solution = this.solveTrajectory(state, tank, target, terrain, {
             minAngle: 0,
             maxAngle: 180,
-            angleStep: 2,
+            angleStep: 1, // High precision
             preferLowArc: false
         });
 
@@ -197,57 +256,54 @@ export class AIController {
     }
 
     private cyborgShot(state: GameState, tank: TankState, target: TankState, terrain: TerrainSystem): { angle: number, power: number } {
-        // Same as spoiler but perfect aim
+        // Cyborg is ruthless. Uses precision.
         return this.spoilerShot(state, tank, target, terrain);
     }
 
     // --- Core Solver ---
 
-    /**
-     * Tries to find an Angle/Power combination to hit the target.
-     * Iterates angles and binary searches power.
-     */
     private solveTrajectory(
         state: GameState, 
         tank: TankState, 
         target: TankState, 
         terrain: TerrainSystem,
-        opts: { minAngle: number, maxAngle: number, angleStep: number, preferLowArc?: boolean } = { minAngle: 0, maxAngle: 180, angleStep: 5 }
+        opts: { minAngle: number, maxAngle: number, angleStep: number, preferLowArc?: boolean, ignoreWind?: boolean } = { minAngle: 0, maxAngle: 180, angleStep: 5 }
     ): { angle: number, power: number } | null {
 
-        const { gravity, wind } = state;
+        const { gravity } = state;
+        const wind = opts.ignoreWind ? 0 : state.wind;
         const startX = tank.x;
         const startY = tank.y - 15; // Muzzle
         
-        // Determine angle range based on target direction relative to tank
-        // If target is Right, we want 0-90. If Left, 90-180.
-        // Although wind can blow back, generally we aim towards target.
-        // Let's sweep all valid angles just in case.
-
         const angles: number[] = [];
+        // Optimize angle search range based on target direction
+        
+        // Search around base angle first, then expand
+        // Or just sweep 0-180 but sort by proximity to baseAngle
         for (let a = opts.minAngle; a <= opts.maxAngle; a += opts.angleStep) angles.push(a);
 
-        // Heuristic sorting of angles
         if (opts.preferLowArc) {
-            // Sort by deviation from direct line? Or just use as is.
+            // Sort by abs diff from 0 or 180?
+            // Low arc means closer to 0 or 180.
+            angles.sort((a, b) => Math.min(Math.abs(a), Math.abs(180-a)) - Math.min(Math.abs(b), Math.abs(180-b)));
         } else {
-            // Prefer high arc (closer to 90) to go over mountains
+             // Prefer high arc (closer to 90)
             angles.sort((a, b) => Math.abs(a - 90) - Math.abs(b - 90));
         }
 
+        // Adaptive Difficulty: Spoiler/Cyborg get more iterations
+        const powerSteps = (this.actualPersonality === AIPersonality.CYBORG || this.actualPersonality === AIPersonality.SPOILER) ? 12 : 8;
+
         for (const angle of angles) {
-            // Binary Search for Power [100, 1000]
-            let low = 100;
+            // Binary Search for Power [0, 1000]
+            let low = 0;
             let high = 1000;
-            // We do a few iterations of binary search to find exact power for this angle
-            for (let i = 0; i < 8; i++) {
+            
+            for (let i = 0; i < powerSteps; i++) {
                 const power = (low + high) / 2;
                 const result = this.simulateShot(startX, startY, angle, power, gravity, wind, terrain, target, state.borderMode);
 
                 if (result.hitTarget) {
-                    // Valid shot found!
-                    // Optimization: We could return immediately, or try to find "best" center hit.
-                    // For now, return first valid hit.
                     return { angle, power }; 
                 }
 
@@ -279,26 +335,21 @@ export class AIController {
         let y = y0;
 
         const dt = AI_CONSTANTS.SIMULATION_STEP;
-        const targetRadius = 20; // Hitbox
+        const targetRadius = 25; // slightly lenient for AI calc
 
-        // Wrap handling helper
         const handleWrap = () => {
              if (x < 0) x += CONSTANTS.SCREEN_WIDTH;
              else if (x > CONSTANTS.SCREEN_WIDTH) x -= CONSTANTS.SCREEN_WIDTH;
         };
 
-        // Determine "Forward" direction towards target for Overshot calculation
-        // This is tricky with wind. Simple heuristic: if we pass target X.
         const direction = target.x > x0 ? 1 : -1;
 
         for (let t = 0; t < AI_CONSTANTS.SIMULATION_MAX_TIME; t += dt) {
-            // Physics Step
-            vx += wind * dt * 6; // Matching PhysicsSystem factors
+            vx += wind * dt * 6;
             vy += gravity * dt * 10;
             x += vx * dt;
             y += vy * dt;
 
-            // Border Logic
             if (borderMode === 'wrap') handleWrap();
             if (borderMode === 'bounce') {
                 if (x < 0 || x > CONSTANTS.SCREEN_WIDTH) {
@@ -307,50 +358,78 @@ export class AIController {
                 }
             }
             if (borderMode === 'concrete' || borderMode === 'normal') {
-                if (x < 0 || x > CONSTANTS.SCREEN_WIDTH) return { hitTarget: false, overshot: true, hitTerrain: false }; // Wall hit
+                if (x < 0 || x > CONSTANTS.SCREEN_WIDTH) return { hitTarget: false, overshot: true, hitTerrain: false };
             }
 
-            // Check Hit Target
             const dx = x - target.x;
             const dy = y - (target.y - 10);
             if (dx*dx + dy*dy < targetRadius*targetRadius) {
                 return { hitTarget: true, overshot: false, hitTerrain: false };
             }
 
-            // Check Terrain
-            if (terrain.isSolid(x, y)) {
-                return { hitTarget: false, overshot: false, hitTerrain: true };
+            // Optimization: If we are way below target and moving down, we missed
+            if (y > target.y + 100 && vy > 0) {
+                 // Check if we passed X
+                 const dist = (x - target.x) * direction;
+                 return { hitTarget: false, overshot: dist > 0, hitTerrain: true };
             }
-            
-            // Check Ground
-            if (y > CONSTANTS.SCREEN_HEIGHT) {
-                // Ground Hit
-                 return { hitTarget: false, overshot: false, hitTerrain: true };
+
+            if (terrain.isSolid(x, y) || y > CONSTANTS.SCREEN_HEIGHT) {
+                 const dist = (x - target.x) * direction;
+                 return { hitTarget: false, overshot: dist > 0, hitTerrain: true };
             }
         }
 
-        // Time out - check if we passed the target (Overshot)
-        // If direction is Right (1) and x > target.x, we overshot.
         const finalDist = (x - target.x) * direction;
         return { hitTarget: false, overshot: finalDist > 0, hitTerrain: false };
     }
 
-    private chooseWeapon(tank: TankState, target: TankState): string {
-        // Use inventory logic
+    private chooseWeapon(tank: TankState, target: TankState, state: GameState): string {
         const dist = Math.abs(target.x - tank.x);
+        const enemiesClumped = state.tanks.filter(t => t.id !== tank.id && Math.abs(t.x - target.x) < 80).length > 1;
+
+        // Logic for specialized weapons
+        if (enemiesClumped && tank.inventory['nuke'] && tank.inventory['nuke'] > 0) return 'nuke';
+        if (enemiesClumped && tank.inventory['funky_bomb'] && tank.inventory['funky_bomb'] > 0) return 'funky_bomb';
+
+        // Use terrain weapons?
+        if (tank.y > 500 && tank.inventory['riot_blast'] && tank.inventory['riot_blast'] > 0) return 'riot_blast'; // Clear dirt
+
+        // Standard logic
+        if (dist > 500 && tank.inventory['mirv'] && tank.inventory['mirv'] > 0) return 'mirv';
         
-        if (dist > 400 && tank.inventory['nuke'] && tank.inventory['nuke'] > 0) return 'nuke';
-        if (tank.inventory['mirv'] && tank.inventory['mirv'] > 0) return 'mirv';
+        // Fallback to strongest standard
+        if (tank.inventory['nuke'] && tank.inventory['nuke'] > 0) return 'nuke';
         if (tank.inventory['missile'] && tank.inventory['missile'] > 0) return 'missile';
         
         return 'baby_missile';
     }
     
     public makePurchases(tank: TankState): { [itemId: string]: number } {
-        // Keep simple purchasing logic
         const purchases: { [itemId: string]: number } = {};
-        if (tank.credits > 2000) purchases['missile'] = 5;
-        if (tank.credits > 10000) purchases['nuke'] = 1;
+        const p = this.actualPersonality;
+        const funds = tank.credits;
+
+        // Essentials
+        if (tank.accessories['shield'] === undefined || tank.accessories['shield'] < 2) {
+             if (funds > 5000) purchases['shield'] = 2;
+        }
+        if (tank.accessories['battery'] === undefined || tank.accessories['battery'] < 2) {
+             if (funds > 1000) purchases['battery'] = 2;
+        }
+
+        // Personality Buying
+        if (p === AIPersonality.CYBORG || p === AIPersonality.SPOILER) {
+            if (funds > 20000) purchases['nuke'] = 2;
+            else if (funds > 5000) purchases['missile'] = 10;
+        } else if (p === AIPersonality.POOLSHARK) {
+            if (funds > 10000) purchases['leapfrog'] = 5;
+            if (funds > 5000) purchases['roller'] = 5;
+        } else {
+             // Generic
+             if (funds > 3000) purchases['missile'] = 5;
+        }
+
         return purchases;
     }
 }

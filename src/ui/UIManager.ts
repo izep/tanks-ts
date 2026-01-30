@@ -63,7 +63,7 @@ export class UIManager {
       </div>
       
       <!-- ... D-Pad ... -->
-      <div class="control-cluster bottom-left">
+      <div id="controls-left" class="control-cluster bottom-left">
         <div class="d-pad-grid">
             <div></div>
             <div class="d-pad-btn" id="btn-up"><span>▲</span></div>
@@ -80,7 +80,7 @@ export class UIManager {
       </div>
 
       <!-- Bottom Right Controls (Actions) -->
-      <div class="control-cluster bottom-right">
+      <div id="controls-right" class="control-cluster bottom-right">
         <div class="btn-circle btn-yellow" id="btn-weapon" title="Switch Weapon">
             <i class="fa-solid fa-bomb" style="font-size:32px;"></i>
         </div>
@@ -290,17 +290,28 @@ export class UIManager {
     }
 
     private handlePhaseChange(state: GameState) {
+        const hud = document.getElementById('hud');
+        const controlsLeft = document.getElementById('controls-left');
+        const controlsRight = document.getElementById('controls-right');
+
         if (state.phase === 'SHOP') {
             this.shopContainer!.style.display = 'block';
             this.buildShopGrid();
+            if (hud) hud.style.display = 'none';
+            if (controlsLeft) controlsLeft.style.display = 'none';
+            if (controlsRight) controlsRight.style.display = 'none';
+        } else if (state.phase === 'SETUP') {
+            this.setupContainer!.style.display = 'block';
+            this.shopContainer!.style.display = 'none';
+            if (hud) hud.style.display = 'none';
+            if (controlsLeft) controlsLeft.style.display = 'none';
+            if (controlsRight) controlsRight.style.display = 'none';
         } else {
             this.shopContainer!.style.display = 'none';
-        }
-
-        if (state.phase === 'SETUP') {
-            this.setupContainer!.style.display = 'block';
-        } else {
             this.setupContainer!.style.display = 'none';
+            if (hud) hud.style.display = 'block';
+            if (controlsLeft) controlsLeft.style.display = 'flex';
+            if (controlsRight) controlsRight.style.display = 'flex';
         }
     }
 

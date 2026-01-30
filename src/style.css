@@ -5,7 +5,13 @@
 
   color-scheme: dark;
   color: rgba(255, 255, 255, 0.9);
-  background-color: #1a1a1a;
+  background-color: #050505;
+
+  /* Safe Area Variables */
+  --safe-top: env(safe-area-inset-top, 20px);
+  --safe-bottom: env(safe-area-inset-bottom, 20px);
+  --safe-left: env(safe-area-inset-left, 20px);
+  --safe-right: env(safe-area-inset-right, 20px);
 }
 
 body {
@@ -14,9 +20,13 @@ body {
   align-items: center;
   justify-content: center;
   width: 100vw;
-  height: 100vh;
+  height: 100dvh; /* Dynamic Viewport Height for Mobile */
   overflow: hidden;
-  background: #111;
+  background: #000;
+  /* Prevent bounce on iOS */
+  position: fixed; 
+  left: 0;
+  top: 0;
 }
 
 #app {
@@ -31,24 +41,22 @@ body {
 /* Responsive Game Container */
 #game-container {
   position: relative;
-  /* Maintain aspect ratio or fill? User said "expand".
-     Let's try to fill as much as possible while keeping ratio vs filling screen. 
-     Usually full screen canvas is best for this request.
-     But canvas resolution is internal. 
-     Let's style it to fit containment. */
   width: 100%;
   height: 100%;
-  max-width: 1280px; /* Optional cap */
-  max-height: 900px;
-  background: #000;
+  /* Remove max-width for full immersion on mobile, 
+     but maybe keep aspect ratio for gameplay fairness? 
+     For "amazing" UI, full screen is better. */
+  background: linear-gradient(to bottom, #000 0%, #111 100%);
   box-shadow: 0 0 50px rgba(0,0,0,0.5);
+  overflow: hidden;
 }
 
 #game-canvas {
   width: 100%;
   height: 100%;
   display: block;
-  object-fit: contain; /* Ensures canvas isn't stretched weirdly if aspect differs */
+  object-fit: contain; /* Keep aspect ratio of internal resolution */
+  image-rendering: pixelated; /* Sharp pixels for retro feel */
 }
 
 /* UI Layer */
@@ -61,6 +69,13 @@ body {
   pointer-events: none;
   z-index: 20;
   overflow: hidden;
+  
+  /* Apply safe areas to the UI layer generally */
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
+  box-sizing: border-box;
 }
 
 #ui-layer > * {
@@ -69,39 +84,47 @@ body {
 
 /* Glassmorphism Classes */
 .hud-panel {
-  background: rgba(30, 40, 50, 0.65);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(20, 20, 25, 0.4);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   color: white;
   padding: 16px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.3s ease;
 }
 
 .hud-panel h3 {
-  margin: 0 0 8px 0;
-  font-size: 14px;
+  margin: 0 0 10px 0;
+  font-size: 13px;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  opacity: 0.8;
+  letter-spacing: 2px;
+  opacity: 0.6;
+  font-weight: 700;
 }
 
 .stat-row {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 4px;
-  font-size: 14px;
+  margin-bottom: 6px;
+  font-size: 15px;
+  align-items: center;
 }
 
 .stat-label {
   color: #aaa;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .stat-value {
-  font-weight: bold;
+  font-weight: 600;
   color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
 
 /* Controls */
@@ -109,97 +132,145 @@ body {
   position: absolute;
   padding: 20px;
   display: flex;
-  gap: 15px;
+  gap: 24px;
+  z-index: 100;
 }
 
 .bottom-left {
   bottom: 20px;
   left: 20px;
   align-items: flex-end;
+  /* Push up/in for safe area */
+  margin-bottom: var(--safe-bottom);
+  margin-left: var(--safe-left);
 }
 
 .bottom-right {
   bottom: 20px;
   right: 20px;
   align-items: flex-end;
+  margin-bottom: var(--safe-bottom);
+  margin-right: var(--safe-right);
 }
 
 /* Circular Buttons */
 .btn-circle {
-  width: 60px;
-  height: 60px;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(30, 30, 40, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   user-select: none;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  -webkit-tap-highlight-color: transparent;
 }
 
 .btn-circle:active {
-  transform: scale(0.95);
-  background: rgba(255, 255, 255, 0.1);
+  transform: scale(0.92);
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 
 .btn-large {
-  width: 80px;
-  height: 80px;
-  background: rgba(200, 50, 50, 0.8);
+  width: 90px;
+  height: 90px;
+  background: rgba(220, 40, 40, 0.7);
   border-color: rgba(255, 100, 100, 0.4);
-  font-size: 18px;
+  font-size: 24px;
 }
 
 .btn-blue {
-    background: rgba(50, 100, 200, 0.6);
+    background: rgba(40, 100, 220, 0.6);
     border-color: rgba(100, 150, 255, 0.4);
 }
 
 .btn-yellow {
-    background: rgba(200, 180, 50, 0.6);
+    background: rgba(220, 180, 40, 0.6);
     border-color: rgba(255, 240, 100, 0.4);
 }
 
-/* D-Pad Layout */
+/* D-Pad Layout - Optimized for Thumb */
 .d-pad-grid {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
     grid-template-rows: 1fr 1fr 1fr;
-    gap: 5px;
-    width: 150px;
-    height: 150px;
+    gap: 8px;
+    width: 180px; /* Larger for touch */
+    height: 180px;
+    background: rgba(20, 20, 20, 0.3);
+    border-radius: 50%; /* Circle background behind D-pad */
+    padding: 10px;
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255,255,255,0.05);
 }
 
 .d-pad-btn {
     width: 100%;
     height: 100%;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px; /* Soft square */
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-size: 20px;
-    color: #ccc;
-    transition: background 0.1s;
+    font-size: 24px;
+    color: rgba(255,255,255,0.8);
+    transition: all 0.1s;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .d-pad-btn:active {
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.25);
+    transform: scale(0.95);
+    color: #fff;
 }
 
 /* Turn Message */
 #turn-message {
-    font-size: 3rem;
-    font-weight: 800;
+    font-size: clamp(2rem, 5vw, 4rem);
+    font-weight: 900;
     text-transform: uppercase;
-    letter-spacing: 2px;
-    text-shadow: 0 4px 12px rgba(0,0,0,0.8);
+    letter-spacing: 4px;
+    text-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    background: linear-gradient(to bottom, #fff, #aaa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 4px 0 rgba(0,0,0,0.5));
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.1); 
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.2); 
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.3); 
+}
+
+/* Shop Overlay Styling */
+#shop-layer, #setup-layer {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    background: rgba(10, 10, 15, 0.85) !important; /* Override inline */
+}
+
+/* Selector Overlay */
+#selector-overlay {
+    backdrop-filter: blur(10px);
 }

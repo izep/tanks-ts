@@ -11,6 +11,12 @@ import { AISystem } from '../systems/AISystem';
 import { ShopSystem } from '../systems/ShopSystem';
 import { GameFlowSystem } from '../systems/GameFlowSystem';
 import { WEAPONS } from './WeaponData';
+import { 
+    DefaultBorderStrategy, 
+    WrapBorderStrategy, 
+    BounceBorderStrategy, 
+    ConcreteBorderStrategy 
+} from '../systems/physics/BorderStrategy';
 
 export class GameEngine {
     private canvas: HTMLCanvasElement;
@@ -78,7 +84,25 @@ export class GameEngine {
         // UI Bindings
         this.uiManager.onBuyWeapon = (weaponId) => this.shopSystem.handleBuyWeapon(this.state, weaponId);
         this.uiManager.onNextRound = async () => await this.gameFlowSystem.handleNextRound(this.state);
-        this.uiManager.onStartGame = async (config) => await this.gameSetupSystem.handleStartGame(this.state, config);
+        this.uiManager.onStartGame = async (config) => {
+            await this.gameSetupSystem.handleStartGame(this.state, config);
+            
+            // Set Border Strategy
+            switch (config.borders) {
+                case 'wrap':
+                    this.physicsSystem.setBorderStrategy(new WrapBorderStrategy());
+                    break;
+                case 'bounce':
+                    this.physicsSystem.setBorderStrategy(new BounceBorderStrategy());
+                    break;
+                case 'concrete':
+                    this.physicsSystem.setBorderStrategy(new ConcreteBorderStrategy());
+                    break;
+                default:
+                    this.physicsSystem.setBorderStrategy(new DefaultBorderStrategy());
+                    break;
+            }
+        };
         this.uiManager.onSetWeapon = (id) => this.shopSystem.handleSetWeapon(this.state, id);
         this.uiManager.onSetShield = (id) => this.shopSystem.handleSetShield(this.state, id);
         this.uiManager.onRestartGame = () => {

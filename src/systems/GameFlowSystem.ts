@@ -1,4 +1,4 @@
-import { type GameState, GamePhase } from '../core/GameState';
+import { type GameState, GamePhase, CONSTANTS } from '../core/GameState';
 import { TerrainSystem } from './TerrainSystem';
 import { PhysicsSystem } from './PhysicsSystem';
 import { SoundManager } from '../core/SoundManager';
@@ -77,10 +77,10 @@ export class GameFlowSystem {
 
         await this.terrainSystem.generate(state);
 
-        // Reset positions?
-        // Simple respawn
+        // Reset positions
+        const sectionWidth = CONSTANTS.SCREEN_WIDTH / state.tanks.length;
         state.tanks.forEach((t, i) => {
-            t.x = 100 + i * 400;
+            t.x = sectionWidth * i + sectionWidth / 2;
             t.y = 100; // Will fall
             t.health = 100;
             t.isDead = false;

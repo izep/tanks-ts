@@ -10,6 +10,16 @@ library.add(faGear, faBolt, faBomb, faHeart, faShieldAlt, faCoins, faWind);
 // Automatically replace <i> tags with <svg>
 dom.watch();
 
+// Unregister Service Workers (Dev Mode Fix for Zombie SWs)
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    for (const registration of registrations) {
+      console.log('Unregistering Service Worker:', registration);
+      registration.unregister();
+    }
+  });
+}
+
 const init = () => {
   let app = document.querySelector<HTMLDivElement>('#app');
   if (!app) {

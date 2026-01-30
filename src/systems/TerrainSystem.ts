@@ -58,7 +58,7 @@ export class TerrainSystem {
             if (res.ok) {
                 const json = await res.json();
                 if (Array.isArray(json)) {
-                    this.availableMaps = json.filter(s => typeof s === 'string' && s.toLowerCase().endsWith('.mtn'));
+                    this.availableMaps = json.filter(s => typeof s === 'string' && (s.toLowerCase().endsWith('.mtn') || s.toLowerCase().endsWith('.png')));
                     console.log(`Loaded ${this.availableMaps.length} maps.`);
                 }
             }
@@ -94,7 +94,7 @@ export class TerrainSystem {
             const mapName = this.availableMaps[mapIndex];
             console.log(`Loading map: ${mapName}`);
             try {
-                mapLoaded = await this.loadAndDrawMtn(mapName);
+                mapLoaded = await this.loadMap(mapName);
             } catch (e) {
                 console.error(`Failed to load map ${mapName}:`, e);
             }
@@ -106,6 +106,78 @@ export class TerrainSystem {
         }
 
         gameState.terrainDirty = false;
+    }
+
+    private async loadMap(filename: string): Promise<boolean> {
+        if (filename.toLowerCase().endsWith('.png')) {
+            return this.loadAndDrawPng(filename);
+        } else {
+            return this.loadAndDrawMtn(filename);
+        }
+    }
+
+    private async loadAndDrawPng(filename: string): Promise<boolean> {
+        const baseUrl = import.meta.env.BASE_URL;
+        const fileUrl = `${baseUrl}mountains/${filename}`.replace('//', '/');
+
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.onload = () => {
+                // Scale Logic: Fit width, constraint height to allow sky
+                let destW = this.width;
+                let destH = img.height * (this.width / img.width);
+
+                // If still too tall (cover more than 85% of screen), squash it
+                const maxH = this.height * 0.85;
+                if (destH > maxH) {
+                    destH = maxH;
+                }
+
+                const destX = 0;
+                const destY = this.height - destH;
+
+                this.ctx.drawImage(img, destX, destY, destW, destH);
+
+                // Update Mask based on Alpha
+                // Since we draw to canvas, we just read the canvas pixels we just drew
+                // We know exactly where we drew: destX, destY, destW, destH.
+                // But destW/H might be floats, so round for pixel reading
+                const readX = Math.floor(destX);
+                const readY = Math.floor(destY);
+                const readW = Math.floor(destW);
+                const readH = Math.floor(destH);
+
+                if (readW <= 0 || readH <= 0) {
+                    resolve(true);
+                    return;
+                }
+
+                const imageData = this.ctx.getImageData(readX, readY, readW, readH);
+                const data = imageData.data;
+
+                for (let y = 0; y < readH; y++) {
+                    for (let x = 0; x < readW; x++) {
+                        const idx = (y * readW + x) * 4;
+                        const alpha = data[idx + 3];
+
+                        if (alpha > 20) { // Threshold for solidity
+                            const canvasX = readX + x;
+                            const canvasY = readY + y;
+                            if (canvasX < this.width && canvasY < this.height) {
+                                this.terrainMask[canvasY * this.width + canvasX] = 1;
+                            }
+                        }
+                    }
+                }
+                resolve(true);
+            };
+            img.onerror = () => {
+                console.error(`Failed to load PNG: ${filename}`);
+                resolve(false);
+            };
+            img.src = fileUrl;
+        });
     }
 
     private async loadAndDrawMtn(filename: string): Promise<boolean> {

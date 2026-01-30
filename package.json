@@ -11,6 +11,7 @@
     "deploy": "gh-pages -d dist"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
     "@vitest/ui": "^4.0.15",
     "gh-pages": "^6.3.0",
     "typescript": "~5.9.3",
@@ -19,6 +20,7 @@
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^7.1.0",
-    "@fortawesome/free-solid-svg-icons": "^7.1.0"
+    "@fortawesome/free-solid-svg-icons": "^7.1.0",
+    "jimp": "^1.6.0"
   }
 }

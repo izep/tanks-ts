@@ -59,6 +59,7 @@ export class GameSetupSystem {
 
         state.maxRounds = config.rounds || 10;
         state.phase = GamePhase.AIMING;
+        state.borderMode = config.borders || 'normal';
 
         // Initial Wind
         state.wind = (Math.random() * 70) - 35;

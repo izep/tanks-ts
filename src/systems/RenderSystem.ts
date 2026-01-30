@@ -172,10 +172,10 @@ export class RenderSystem {
             const shieldAlpha = Math.min(1.0, tank.shieldHealth / 200);
             const time = Date.now() / 1000;
             const pulse = 0.5 + 0.5 * Math.sin(time * 3);
-            
+
             this.ctx.save();
             this.ctx.globalAlpha = 0.3 + 0.2 * pulse * shieldAlpha;
-            
+
             // Outer shield glow
             this.ctx.strokeStyle = '#00FFFF';
             this.ctx.lineWidth = 3;
@@ -184,7 +184,7 @@ export class RenderSystem {
             this.ctx.beginPath();
             this.ctx.arc(0, -10, 28, 0, Math.PI * 2);
             this.ctx.stroke();
-            
+
             // Inner shield layer
             this.ctx.strokeStyle = '#FFFFFF';
             this.ctx.lineWidth = 2;
@@ -192,7 +192,7 @@ export class RenderSystem {
             this.ctx.beginPath();
             this.ctx.arc(0, -10, 25, 0, Math.PI * 2);
             this.ctx.stroke();
-            
+
             // Shield health indicator (hexagons for sci-fi look)
             this.ctx.globalAlpha = 0.5 * shieldAlpha;
             this.ctx.fillStyle = '#00FFFF';
@@ -204,7 +204,7 @@ export class RenderSystem {
                 this.ctx.arc(x, y, 3, 0, Math.PI * 2);
                 this.ctx.fill();
             }
-            
+
             this.ctx.restore();
         }
 
@@ -274,11 +274,18 @@ export class RenderSystem {
         this.ctx.save();
 
         // Trail
+        // Trail
         if (proj.trail.length > 1) {
             this.ctx.beginPath();
             this.ctx.moveTo(proj.trail[0].x, proj.trail[0].y);
             for (let i = 1; i < proj.trail.length; i++) {
-                this.ctx.lineTo(proj.trail[i].x, proj.trail[i].y);
+                const prev = proj.trail[i - 1];
+                const curr = proj.trail[i];
+                if (Math.abs(curr.x - prev.x) > 100) {
+                    this.ctx.moveTo(curr.x, curr.y);
+                } else {
+                    this.ctx.lineTo(curr.x, curr.y);
+                }
             }
             this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
             this.ctx.lineWidth = 2;

@@ -184,6 +184,15 @@ export class UIManager {
             <div style="margin: 20px;">
                  <label>Rounds: <input type="number" id="setup-rounds" value="10" min="1" max="20" style="padding: 5px; width: 50px; text-align: center;"></label>
                  <br><br>
+                 <label>Borders: 
+                    <select id="setup-borders" style="padding: 5px;">
+                        <option value="normal">Normal</option>
+                        <option value="wrap">Wrap Around</option>
+                        <option value="bounce">Bounce</option>
+                        <option value="concrete">Concrete (Explode)</option>
+                    </select>
+                 </label>
+                 <br><br>
                  <label><input type="checkbox" id="setup-test-mode"> Test Mode (100 Weapons)</label>
             </div>
 
@@ -273,8 +282,9 @@ export class UIManager {
             }
 
             const testMode = (document.getElementById('setup-test-mode') as HTMLInputElement).checked;
+            const borders = (document.getElementById('setup-borders') as HTMLSelectElement).value;
 
-            const config = { playerCount: count, rounds, players, testMode };
+            const config = { playerCount: count, rounds, players, testMode, borders };
             this.onStartGame(config);
         });
     }

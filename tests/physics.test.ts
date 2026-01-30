@@ -5,6 +5,7 @@ import { TerrainSystem } from '../src/systems/TerrainSystem';
 import { GameState, GamePhase, type TankState } from '../src/core/GameState';
 
 import { SoundManager } from '../src/core/SoundManager';
+import { WrapBorderStrategy } from '../src/systems/physics/BorderStrategy';
 
 // Mock Canvas and Context for Node environment
 class MockContext {
@@ -192,5 +193,28 @@ describe('PhysicsSystem', () => {
         expect(mockState.explosions.length).toBe(1);
         expect(explodeSpy).toHaveBeenCalled();
         expect(mockState.tanks[1].health).toBeLessThan(100);
+    });
+
+    it('should wrap projectile around screen with WrapBorderStrategy', () => {
+        physics.setBorderStrategy(new WrapBorderStrategy());
+        const proj: any = {
+            id: 'wrap-test',
+            x: 810, // Just beyond right edge
+            y: 100,
+            vx: 100,
+            vy: 0,
+            weaponType: 'missile',
+            ownerId: 1,
+            elapsedTime: 0,
+            trail: []
+        };
+        mockState.projectiles = [proj];
+
+        physics.update(mockState, 0.1);
+
+        expect(mockState.projectiles.length).toBe(1);
+        expect(proj.x).toBeLessThan(800);
+        expect(proj.x).toBeGreaterThan(0);
+        expect(proj.x).toBeCloseTo(10 + (proj.vx * 0.1)); // 810 - 800 + movement
     });
 });

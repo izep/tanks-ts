@@ -2,14 +2,47 @@ import { type GameState, GamePhase, type ProjectileState, CONSTANTS } from '../c
 import { TerrainSystem } from './TerrainSystem';
 import { WEAPONS } from '../core/WeaponData';
 import { SoundManager } from '../core/SoundManager';
+import {
+    type BorderStrategy,
+    DefaultBorderStrategy,
+    BorderAction
+} from './physics/BorderStrategy';
+import {
+    type WeaponBehavior,
+    StandardFlightBehavior,
+    ParticleBehavior,
+    RollingBehavior,
+    DiggingBehavior,
+    type PhysicsContext
+} from './physics/WeaponBehavior';
 
 export class PhysicsSystem {
     private terrainSystem: TerrainSystem;
     private soundManager: SoundManager;
 
+    // Strategies & Behaviors
+    private borderStrategy: BorderStrategy;
+    private standardBehavior: StandardFlightBehavior;
+    private particleBehavior: ParticleBehavior;
+    private rollingBehavior: RollingBehavior;
+    private diggingBehavior: DiggingBehavior;
+
     constructor(terrainSystem: TerrainSystem, soundManager: SoundManager) {
         this.terrainSystem = terrainSystem;
         this.soundManager = soundManager;
+
+        // Default Config (Can be changed at runtime if needed)
+        this.borderStrategy = new DefaultBorderStrategy();
+
+        // Initialize Behaviors
+        this.standardBehavior = new StandardFlightBehavior();
+        this.particleBehavior = new ParticleBehavior();
+        this.rollingBehavior = new RollingBehavior();
+        this.diggingBehavior = new DiggingBehavior();
+    }
+
+    public setBorderStrategy(strategy: BorderStrategy) {
+        this.borderStrategy = strategy;
     }
 
     public update(state: GameState, dt: number) {
@@ -35,338 +68,79 @@ export class PhysicsSystem {
     private updateProjectiles(state: GameState, dt: number) {
         const toRemove: number[] = [];
         const newQueue: any[] = []; // Temporary queue for new projectiles
-        let collided = false;
+
+        // Context for behaviors
+        const context: PhysicsContext = {
+            terrainSystem: this.terrainSystem,
+            soundManager: this.soundManager,
+            triggerExplosion: (s, x, y, p, q) => this.triggerExplosion(s, x, y, p, q),
+            addProjectile: (p) => newQueue.push(p)
+        };
 
         state.projectiles.forEach((proj, index) => {
-            const weaponId = proj.weaponType || 'missile';
+            // 1. Select Behavior
+            const behavior = this.getBehavior(proj);
 
-            // --- Particle Update Logic ---
-            if (weaponId === 'napalm_particle' || weaponId === 'liquid_dirt_particle' || weaponId === 'dirt_particle') {
-                // Gravity
-                proj.vy += state.gravity * dt * 5;
+            // 2. Update (returns true if behavior requested removal)
+            let shouldRemove = behavior.update(proj, state, dt, context);
 
-                // Movement
-                proj.x += proj.vx * dt;
-                proj.y += proj.vy * dt;
-
-                // Ground Check
-                const groundY = this.terrainSystem.getGroundY(Math.floor(proj.x));
-
-                // Tank Collision Logic (for Napalm/Dirt)
-                for (const tank of state.tanks) {
-                    if (tank.health <= 0) continue;
-                    const dx = proj.x - tank.x;
-                    const dy = proj.y - (tank.y - 10);
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-
-                    if (dist < 15) {
-                        if (weaponId === 'napalm_particle') {
-                             // Damage tank
-                             tank.health -= 0.5; // DoT per particle
-                             if (tank.health <= 0) tank.isDead = true;
-                        } else if (weaponId === 'dirt_particle' || weaponId === 'liquid_dirt_particle') {
-                            // Hit tank -> Become dirt at tank position
-                            this.terrainSystem.addTerrain(state, tank.x, tank.y, 6, WEAPONS['liquid_dirt']?.color);
-                            toRemove.push(index);
-                        }
-                    }
-                }
-
-                if (proj.y >= groundY) {
-                    proj.y = groundY;
-
-                    // Simple "Ooze" / Rolling physics for particles
-                    const groundYNext = this.terrainSystem.getGroundY(Math.floor(proj.x + (proj.vx > 0 ? 5 : -5)));
-                    const slope = groundYNext - groundY;
-
-                    if (Math.abs(slope) > 2) {
-                        proj.vx += slope * 5 * dt; // Slide down
+            // 3. Border Check (if not already removed)
+            if (!shouldRemove) {
+                const borderAction = this.borderStrategy.check(proj);
+                if (borderAction !== BorderAction.NONE) {
+                    if (borderAction === BorderAction.EXPLODE) {
+                        // Explode at current position (at the edge)
+                        this.triggerExplosion(state, proj.x, proj.y, proj, newQueue);
+                        shouldRemove = true;
                     } else {
-                        proj.vx *= 0.9; // Friction
+                        // Apply strategy (Bounce, Wrap, Destroy)
+                        shouldRemove = this.borderStrategy.apply(proj, borderAction);
                     }
+                }
+            }
 
-                    // Napalm Burns terrain
-                    if (weaponId === 'napalm_particle') {
-                        // Burn chance/effect
-                        if (Math.random() < 0.1) {
-                            this.terrainSystem.explode(state, proj.x, proj.y, 5);
+            // 4. Collision Check (Standard & Rolling)
+            // Diggers handle their own collision in behavior
+            // Particles handle their own collision/ground check in behavior
+            if (!shouldRemove && !this.isParticle(proj.weaponType) && !this.isDigger(proj.weaponType)) {
+                // Check Collision
+                if (this.checkCollision(state, proj)) {
+                    // Special Handling for Segway (Start Rolling)
+                    if (proj.weaponType === 'segway' && proj.state !== 'rolling') {
+                        this.startRolling(proj);
+                    } else if (proj.weaponType === 'leapfrog') {
+                        // Leapfrog Logic (handled in behavior mostly, but if we are here it hit something)
+                        // Actually checkCollision returns true if it hits ground or tank.
+                        // For leapfrog, we want to bounce.
+                        // TODO: Move Leapfrog collision logic fully to behavior or handle here?
+                        // Current legacy logic:
+                        proj.bounces = (proj.bounces || 0) + 1;
+                        this.triggerExplosion(state, proj.x, proj.y, { ...proj, weaponType: 'baby_missile' }); // bounce puff
+
+                        if (proj.bounces < 3) {
+                            // Bounce!
+                            proj.vy = -Math.abs(proj.vy) * 0.7; // Dampen
+                            proj.vx *= 0.8; // Friction
+                            proj.y -= 5; // Lift up
+                        } else {
+                            shouldRemove = true;
+                            this.triggerExplosion(state, proj.x, proj.y, proj, newQueue);
                         }
+                    } else {
+                        shouldRemove = true;
+                        // Trigger Explosion
+                        this.triggerExplosion(state, proj.x, proj.y, proj, newQueue);
                     }
-
-                    // Stop condition
-                    if (Math.abs(proj.vx) < 5) {
-                        if (weaponId === 'liquid_dirt_particle' || weaponId === 'dirt_particle') {
-                            const color = weaponId === 'liquid_dirt_particle' ? WEAPONS['liquid_dirt']?.color : undefined;
-                            this.terrainSystem.addTerrain(state, proj.x, proj.y, 6, color);
-                            toRemove.push(index);
-                        } else if (weaponId === 'napalm_particle') {
-                            // Napalm dies out eventually (handled by elapsedTime below) or stops and burns a bit more
-                        }
-                    }
-                }
-
-                proj.elapsedTime += dt;
-                if (proj.elapsedTime > 2.0) { // Lifetime
-                    toRemove.push(index);
-                    if (weaponId === 'napalm_particle') {
-                         this.terrainSystem.explode(state, proj.x, proj.y, 8); // Final poof
-                    }
-                }
-                return; // Skip standard logic
-            } else if (weaponId === 'riot_particle') {
-                // Should not happen now as Riot Charge is instant, but kept for safety/legacy
-                 proj.vy += state.gravity * dt * 5;
-                 proj.x += proj.vx * dt;
-                 proj.y += proj.vy * dt;
-
-                 const groundY = this.terrainSystem.getGroundY(Math.floor(proj.x));
-                 if (proj.y >= groundY) {
-                     this.terrainSystem.explode(state, proj.x, proj.y, 8);
-                     toRemove.push(index);
-                 }
-                 proj.elapsedTime += dt;
-                 if (proj.elapsedTime > 2.0) toRemove.push(index);
-                 return;
-            }
-
-            // --- Standard Projectile Logic ---
-
-            // Rolling Logic
-            if (proj.state === 'rolling') {
-                // Get slope
-                const groundY = this.terrainSystem.getGroundY(Math.floor(proj.x));
-                const groundYNext = this.terrainSystem.getGroundY(Math.floor(proj.x + (proj.vx > 0 ? 5 : -5)));
-
-                // Slope angle
-                const dy = groundYNext - groundY;
-                const dx = (proj.vx > 0 ? 5 : -5);
-                const angle = Math.atan2(dy, dx); // Radians
-
-                // Gravity component: F = m * g * sin(theta)
-                // ax = g * sin(theta)
-                const gravity = 100; // or state.gravity
-                const ax = gravity * Math.sin(angle);
-
-                // Friction
-                const friction = 30; // Reduced friction for better rolling
-                if (proj.vx > 0) proj.vx -= friction * dt;
-                else if (proj.vx < 0) proj.vx += friction * dt;
-
-                // Apply Slope Gravity
-                proj.vx += ax * dt * 8; // Stronger slope effect
-
-                proj.x += proj.vx * dt;
-
-                // Snap to ground
-                const newGroundY = this.terrainSystem.getGroundY(Math.floor(proj.x));
-
-                // Wall Check / steep slope check
-                if (Math.abs(dy) > 15) { // More forgiving slope check (was 10)
-                    // Too steep/Wall -> Bounce or Explode?
-                    // Reflect velocity slightly
-                    proj.vx = -proj.vx * 0.5;
-                    // If still stuck, explode
-                    if (Math.abs(proj.vx) < 5) {
-                         collided = true;
-                         toRemove.push(index);
-                         this.triggerExplosion(state, proj.x, proj.y);
-                    }
-                } else {
-                    proj.y = newGroundY;
-                }
-
-                // Stop if too slow
-                if (Math.abs(proj.vx) < 5) {
-                    collided = true;
-                    toRemove.push(index);
-                    this.triggerExplosion(state, proj.x, proj.y);
-                }
-
-                // Check Tank Collision
-                for (const tank of state.tanks) {
-                    if (tank.health <= 0) continue;
-                    const dx = proj.x - tank.x;
-                    const dy = proj.y - (tank.y - 10);
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist < 20) {
-                        collided = true;
-                        toRemove.push(index);
-                        this.triggerExplosion(state, proj.x, proj.y);
-                        break;
-                    }
-                }
-            } else if (proj.weaponType === 'digger' || proj.weaponType === 'baby_digger' || proj.weaponType === 'heavy_digger') {
-                // Digger Logic - Weaving
-                proj.vx += state.wind * dt * 0.1;
-                proj.vy += state.gravity * dt * 10;
-
-                // Add weaving noise
-                const time = performance.now() / 100;
-                proj.vx += Math.sin(time) * 50 * dt; // Wiggle X
-
-                proj.x += proj.vx * dt;
-                proj.y += proj.vy * dt;
-
-                // Digging effect
-                const groundY = this.terrainSystem.getGroundY(Math.floor(proj.x));
-                if (proj.y > groundY) {
-                    this.terrainSystem.explode(state, proj.x, proj.y, 10);
-                }
-            } else if (proj.weaponType === 'sandhog' || proj.weaponType === 'baby_sandhog' || proj.weaponType === 'heavy_sandhog') {
-                 // Sandhog Logic - Weaving
-                 proj.vx += state.wind * dt * 0.1;
-                 proj.vy += state.gravity * dt * 10;
-
-                 // Add weaving noise
-                 const time = performance.now() / 100;
-                 proj.vx += Math.cos(time) * 50 * dt; // Wiggle X different phase
-
-                 proj.x += proj.vx * dt;
-                 proj.y += proj.vy * dt;
-
-                 const groundY = this.terrainSystem.getGroundY(Math.floor(proj.x));
-                 if (proj.y > groundY) {
-                     this.terrainSystem.explode(state, proj.x, proj.y, 8);
-                     if (proj.y >= CONSTANTS.SCREEN_HEIGHT - 10) {
-                         collided = true;
-                         toRemove.push(index);
-                         this.triggerExplosion(state, proj.x, proj.y, proj, newQueue);
-                     }
-                 }
-            } else if (proj.weaponType === 'funky_bomb') {
-                // Funky logic? Handled in explosion but movement could be erratic too?
-                // Standard flight for now.
-                proj.vx += state.wind * dt * 6;
-                proj.vy += state.gravity * dt * 10;
-                proj.x += proj.vx * dt;
-                proj.y += proj.vy * dt;
-            } else {
-                // Normal flying
-                proj.vx += state.wind * dt * 6;
-                proj.vy += state.gravity * dt * 10;
-                proj.x += proj.vx * dt;
-                proj.y += proj.vy * dt;
-            }
-
-            // MIRV and Death's Head Logic
-            if (!proj.splitDone && proj.vy > 0) {
-                if (proj.weaponType === 'mirv') {
-                    proj.splitDone = true;
-                    const offsets = [-50, 50];
-                    offsets.forEach(off => {
-                        newQueue.push({
-                            id: crypto.randomUUID(),
-                            x: proj.x,
-                            y: proj.y,
-                            vx: proj.vx + off,
-                            vy: proj.vy,
-                            weaponType: 'mirv',
-                            ownerId: proj.ownerId,
-                            elapsedTime: 0,
-                            trail: [],
-                            splitDone: true,
-                            generation: (proj.generation || 0) + 1
-                        });
-                    });
-                } else if (proj.weaponType === 'death_head') {
-                    proj.splitDone = true;
-                    const numFragments = 5;
-                    for (let i = 0; i < numFragments; i++) {
-                        const spread = -100 + (i * 50);
-                        newQueue.push({
-                            id: crypto.randomUUID(),
-                            x: proj.x,
-                            y: proj.y,
-                            vx: proj.vx + spread,
-                            vy: proj.vy,
-                            weaponType: 'baby_nuke',
-                            ownerId: proj.ownerId,
-                            elapsedTime: 0,
-                            trail: [],
-                            splitDone: true
-                        });
-                    }
-                    toRemove.push(index);
                 }
             }
 
-            proj.elapsedTime += dt;
-
-            // Trail
+            // Update Trail
             proj.trail.push({ x: proj.x, y: proj.y });
             const maxTrail = proj.weaponType === 'tracer' ? 300 : 50;
             if (proj.trail.length > maxTrail) proj.trail.shift();
 
-            // Check Collision
-            if (this.checkCollision(state, proj)) {
-                const owner = state.tanks.find(t => t.id === proj.ownerId);
-                if (owner) {
-                    owner.lastShotImpact = { x: proj.x, y: proj.y };
-                }
-
-                if (proj.weaponType === 'segway') {
-                    // Start Rolling Unconditionally on ground contact
-                    proj.state = 'rolling';
-                    // Preserve some velocity but clamp it to be safe, don't zero it or explode
-                    // Dampen velocity to prevent immediate explosion from speed check
-                    proj.vx *= 0.8;
-                    proj.vy = 0;
-
-                    const groundY = this.terrainSystem.getGroundY(Math.floor(proj.x));
-                    proj.y = groundY;
-
-                    // Give a small nudge if stopped to ensure it rolls
-                    if (Math.abs(proj.vx) < 10) {
-                        proj.vx = (proj.vx >= 0 ? 1 : -1) * 20;
-                    }
-                } else if (proj.weaponType === 'leapfrog') {
-                    // Bouncer Logic
-                    proj.bounces = (proj.bounces || 0) + 1;
-
-                    // Spawn small explosion at bounce point
-                    this.triggerExplosion(state, proj.x, proj.y, { ...proj, weaponType: 'baby_missile' });
-
-                    if (proj.bounces < 3) { // Bounce 2 times (explode on 3rd contact)
-                        // Bounce!
-                        proj.vy = -Math.abs(proj.vy) * 0.7; // Dampen
-                        proj.vx *= 0.8; // Friction
-                        proj.y -= 5; // Lift up
-                    } else {
-                        // Explode
-                        collided = true;
-                        toRemove.push(index);
-                        this.triggerExplosion(state, proj.x, proj.y, proj, newQueue);
-                    }
-                } else if (proj.weaponType === 'digger' || proj.weaponType === 'baby_digger' || proj.weaponType === 'heavy_digger' ||
-                           proj.weaponType === 'sandhog' || proj.weaponType === 'baby_sandhog' || proj.weaponType === 'heavy_sandhog') {
-                    for (const tank of state.tanks) {
-                        const dx = proj.x - tank.x;
-                        const dy = proj.y - (tank.y - 10);
-                        const dist = Math.sqrt(dx * dx + dy * dy);
-                        if (dist < 20) {
-                            collided = true;
-                            toRemove.push(index);
-                            this.triggerExplosion(state, proj.x, proj.y, proj, newQueue);
-                            break;
-                        }
-                    }
-                } else {
-                    collided = true;
-                    toRemove.push(index);
-                    // Trigger Explosion
-                    this.triggerExplosion(state, proj.x, proj.y, proj, newQueue);
-                }
-            }
-
-            // Bounds Check
-            if (proj.x < 0 || proj.x > CONSTANTS.SCREEN_WIDTH || proj.y > CONSTANTS.SCREEN_HEIGHT) {
-                if (proj.state === 'rolling') {
-                    toRemove.push(index);
-                    collided = true;
-                } else {
-                    toRemove.push(index);
-                    if (proj.y > 600) collided = true;
-                }
+            if (shouldRemove) {
+                toRemove.push(index);
             }
         });
 
@@ -381,9 +155,42 @@ export class PhysicsSystem {
             state.projectiles.splice(idx, 1);
         }
 
-        if (state.projectiles.length === 0 && collided) {
+        // Check for phase change
+        // If no projectiles left, turn is over.
+        if (state.projectiles.length === 0) {
             state.phase = GamePhase.EXPLOSION;
             state.lastExplosionTime = performance.now();
+        }
+    }
+
+    private getBehavior(proj: ProjectileState): WeaponBehavior {
+        if (proj.state === 'rolling') return this.rollingBehavior;
+        if (this.isParticle(proj.weaponType)) return this.particleBehavior;
+        if (this.isDigger(proj.weaponType)) return this.diggingBehavior;
+        return this.standardBehavior;
+    }
+
+    private isParticle(type: string): boolean {
+        return type === 'napalm_particle' || type === 'liquid_dirt_particle' || type === 'dirt_particle' || type === 'riot_particle';
+    }
+
+    private isDigger(type: string): boolean {
+        return type === 'digger' || type === 'baby_digger' || type === 'heavy_digger' ||
+            type === 'sandhog' || type === 'baby_sandhog' || type === 'heavy_sandhog';
+    }
+
+    private startRolling(proj: ProjectileState) {
+        proj.state = 'rolling';
+        // Dampen velocity
+        proj.vx *= 0.8;
+        proj.vy = 0;
+
+        const groundY = this.terrainSystem.getGroundY(Math.floor(proj.x));
+        proj.y = groundY;
+
+        // Nudge
+        if (Math.abs(proj.vx) < 10) {
+            proj.vx = (proj.vx >= 0 ? 1 : -1) * 20;
         }
     }
 
@@ -392,11 +199,16 @@ export class PhysicsSystem {
         const y = Math.floor(proj.y);
         const x = Math.floor(proj.x);
 
+        // Sky check (handled by border strategy mostly, but checkCollision is for Impact)
         if (y < 0) return false;
+
+        // Border Strategy handles Out of Bounds (Bottom/Sides), but here we check for TERRAIN hit.
+        // If y > SCREEN_HEIGHT, it's a hit (handled by BorderStrategy -> Destroy, but strictly speaking it's a "collision" with floor)
+        // We let BorderStrategy handle the removal of deep projectiles.
+        // But if we want an explosion on floor hit?
         if (y >= CONSTANTS.SCREEN_HEIGHT) return true;
 
-        if (proj.weaponType === 'digger' || proj.weaponType === 'baby_digger' || proj.weaponType === 'heavy_digger' ||
-            proj.weaponType === 'sandhog' || proj.weaponType === 'baby_sandhog' || proj.weaponType === 'heavy_sandhog') return false;
+        if (this.isDigger(proj.weaponType)) return false; // Diggers don't collide with terrain surface
 
         const groundY = this.terrainSystem.getGroundY(x);
         if (y >= groundY) return true;
@@ -413,7 +225,8 @@ export class PhysicsSystem {
         return false;
     }
 
-    private triggerExplosion(state: GameState, x: number, y: number, proj?: any, newQueue?: any[]) {
+    // Exposed for Context
+    public triggerExplosion(state: GameState, x: number, y: number, proj?: any, newQueue?: any[]) {
         if (proj) {
             const owner = state.tanks.find(t => t.id === proj.ownerId);
             if (owner) {
@@ -427,30 +240,30 @@ export class PhysicsSystem {
 
         // --- Explosion Logic based on Type ---
         if (weaponStats.type === 'dirt_charge') {
-             this.terrainSystem.addTerrain(state, x, y, radius);
+            this.terrainSystem.addTerrain(state, x, y, radius);
         } else if (weaponStats.type === 'liquid_dirt') {
-             // Spawn Liquid Dirt Particles
-             if (newQueue) {
-                 for (let i = 0; i < 15; i++) { // Reduced count for performance
-                     const angle = Math.random() * 360;
-                     const speed = Math.random() * 50 + 20;
-                     const rad = (angle * Math.PI) / 180;
-                     newQueue.push({
-                         id: crypto.randomUUID(),
-                         x: x,
-                         y: y - 5,
-                         vx: Math.cos(rad) * speed,
-                         vy: Math.sin(rad) * speed,
-                         weaponType: 'liquid_dirt_particle',
-                         ownerId: proj.ownerId,
-                         elapsedTime: 0,
-                         trail: []
-                     });
-                 }
-             }
+            // Spawn Liquid Dirt Particles
+            if (newQueue) {
+                for (let i = 0; i < 15; i++) {
+                    const angle = Math.random() * 360;
+                    const speed = Math.random() * 50 + 20;
+                    const rad = (angle * Math.PI) / 180;
+                    newQueue.push({
+                        id: crypto.randomUUID(),
+                        x: x,
+                        y: y - 5,
+                        vx: Math.cos(rad) * speed,
+                        vy: Math.sin(rad) * speed,
+                        weaponType: 'liquid_dirt_particle',
+                        ownerId: proj.ownerId,
+                        elapsedTime: 0,
+                        trail: []
+                    });
+                }
+            }
         } else if (weaponStats.type === 'napalm' && newQueue) {
             // Spawn Napalm Particles
-            for (let i = 0; i < 15; i++) { // Reduced count
+            for (let i = 0; i < 15; i++) {
                 const sprayAngle = Math.random() * 360;
                 const rad = (sprayAngle * Math.PI) / 180;
                 const speed = Math.random() * 100 + 50;
@@ -469,13 +282,12 @@ export class PhysicsSystem {
             }
             this.terrainSystem.explode(state, x, y, 20); // Initial blast
         } else if (weaponStats.type === 'riot_charge') {
-             // Legacy fallback
-             this.terrainSystem.explode(state, x, y, radius);
+            this.terrainSystem.explode(state, x, y, radius);
         } else if (weaponStats.type === 'earth_disrupter') {
-             state.terrainDirty = true;
+            state.terrainDirty = true;
         } else if (weaponId === 'baby_missile') { // Leapfrog bounce explosion
             this.terrainSystem.explode(state, x, y, 20);
-             state.explosions.push({
+            state.explosions.push({
                 id: Math.random(),
                 x, y,
                 maxRadius: 20,
@@ -497,7 +309,6 @@ export class PhysicsSystem {
                 const dy = y - (tank.y - 10);
                 const dist = Math.sqrt(dx * dx + dy * dy);
                 if (dist < 20) {
-                    // Hit a tank - position dirt at tank's Y coordinate
                     dirtX = tank.x;
                     dirtY = tank.y;
                     break;
@@ -505,8 +316,8 @@ export class PhysicsSystem {
             }
             this.terrainSystem.addTerrain(state, dirtX, dirtY, radius);
         } else {
-             // Default Explosion
-             this.terrainSystem.explode(state, x, y, radius);
+            // Default Explosion
+            this.terrainSystem.explode(state, x, y, radius);
         }
 
         // Funky Bomb Logic
@@ -518,23 +329,22 @@ export class PhysicsSystem {
                 const rad = (angle * Math.PI) / 180;
                 const speed = power * 0.5;
 
-                // Higher launch for funky bomb
                 newQueue.push({
                     id: crypto.randomUUID(),
                     x: x,
                     y: y - 20,
                     vx: Math.cos(rad) * speed,
-                    vy: -Math.abs(Math.sin(rad) * speed) * 1.5, // Force UP
-                    weaponType: 'baby_missile', // Just use baby missile for physics
+                    vy: -Math.abs(Math.sin(rad) * speed) * 1.5,
+                    weaponType: 'baby_missile',
                     ownerId: proj.ownerId || -1,
                     elapsedTime: 0,
                     trail: [],
-                    color: colors[Math.floor(Math.random() * colors.length)] // Custom prop?
+                    color: colors[Math.floor(Math.random() * colors.length)]
                 });
             }
         }
 
-        // Add visual explosion (skip if already handled or specific types)
+        // Add visual explosion 
         if (weaponId !== 'digger') {
             state.explosions.push({
                 id: Math.random(),
@@ -543,7 +353,7 @@ export class PhysicsSystem {
                 currentRadius: 0,
                 duration: 0.5,
                 elapsed: 0,
-                color: proj?.color || weaponStats.color || 'orange' // Use proj color for funky
+                color: proj?.color || weaponStats.color || 'orange'
             });
             this.soundManager.playExplosion();
         }
@@ -695,45 +505,45 @@ export class PhysicsSystem {
         const rad = (angle * Math.PI) / 180;
         const barrelLength = 20;
         const startX = tank.x + Math.cos(rad) * barrelLength;
-        const startY = tank.y - Math.sin(rad) * barrelLength;
+        const startY = (tank.y - 12) - Math.sin(rad) * barrelLength;
         const speed = power * 0.5;
 
         // --- Instant Cone Logic (Riot Weapons) ---
         if (weaponId === 'riot_charge' || weaponId === 'riot_blast') {
-             // Instant effect
-             const spread = 45; // Degrees
-             const length = weaponId === 'riot_blast' ? 150 : 100;
-             this.terrainSystem.clearConicSection(state, startX, startY, angle, length, spread);
+            // Instant effect
+            const spread = 45; // Degrees
+            const length = weaponId === 'riot_blast' ? 150 : 100;
+            this.terrainSystem.clearConicSection(state, startX, startY, angle, length, spread);
 
-             // Visual flash
-             state.explosions.push({
-                 id: Math.random(),
-                 x: startX + Math.cos(rad) * length * 0.5,
-                 y: startY - Math.sin(rad) * length * 0.5,
-                 maxRadius: 10,
-                 currentRadius: 0,
-                 duration: 0.2,
-                 elapsed: 0,
-                 color: 'white'
-             });
-             this.soundManager.playExplosion(); // Or custom sound?
+            // Visual flash
+            state.explosions.push({
+                id: Math.random(),
+                x: startX + Math.cos(rad) * length * 0.5,
+                y: startY - Math.sin(rad) * length * 0.5,
+                maxRadius: 10,
+                currentRadius: 0,
+                duration: 0.2,
+                elapsed: 0,
+                color: 'white'
+            });
+            this.soundManager.playExplosion();
 
-             state.phase = GamePhase.TERRAIN_SETTLING; // Skip flying
-             state.lastExplosionTime = performance.now();
-             return;
+            state.phase = GamePhase.TERRAIN_SETTLING; // Skip flying
+            state.lastExplosionTime = performance.now();
+            return;
         }
 
         // --- Particle Fire Logic ---
         if (weaponId === 'dirt_charge') {
-            const count = 20; // Reduced for performance
+            const count = 20;
             const particleType = 'dirt_particle';
 
             for (let i = 0; i < count; i++) {
-                 const spread = (Math.random() - 0.5) * 40;
-                 const newRad = ((angle + spread) * Math.PI) / 180;
-                 const pSpeed = speed * (0.8 + Math.random() * 0.4);
+                const spread = (Math.random() - 0.5) * 40;
+                const newRad = ((angle + spread) * Math.PI) / 180;
+                const pSpeed = speed * (0.8 + Math.random() * 0.4);
 
-                 state.projectiles.push({
+                state.projectiles.push({
                     id: crypto.randomUUID(),
                     x: startX,
                     y: startY,
@@ -791,3 +601,4 @@ export class PhysicsSystem {
         state.phase = GamePhase.PROJECTILE_FLYING;
     }
 }
+

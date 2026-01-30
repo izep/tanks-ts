@@ -1,4 +1,4 @@
-import { AIController, AIPersonality } from './AIController';
+import type { AIController, AIPersonality } from './AIController';
 
 export const GamePhase = {
   SETUP: 'SETUP',
@@ -86,6 +86,7 @@ export interface GameState {
   gravity: number; // typically 9.8 * scale
   terrainDirty: boolean; // Flag to check settling
   lastExplosionTime: number;
+  borderMode?: 'normal' | 'wrap' | 'bounce' | 'concrete';
 }
 
 export const CONSTANTS = {

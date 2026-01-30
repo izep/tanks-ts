@@ -4,7 +4,7 @@ export default defineConfig({
     base: '/tanks-ts/',
     clearScreen: false,
     server: {
-        port: 5173
+        port: 5174
     },
     build: {
         rollupOptions: {
@@ -13,5 +13,8 @@ export default defineConfig({
                 viewer: 'viewer.html'
             }
         }
+    },
+    test: {
+        exclude: ['**/node_modules/**', '**/dist/**', 'tests/app.spec.ts']
     }
 });

@@ -90,12 +90,14 @@ export class UIManager {
       </div>
       
       <!-- Screens (Shop / Setup) -->
-      <div id="shop-layer" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); color: white; padding: 20px; box-sizing: border-box; pointer-events: auto; overflow-y: auto;">
-        <h1 style="text-align: center; color: gold; font-family: 'Inter', sans-serif;">Weapon Shop</h1>
-        <div id="shop-player-status" style="margin-bottom: 20px; max-width: 800px; margin-left: auto; margin-right: auto; border-bottom: 1px solid #444; padding-bottom: 10px;"></div>
-        <div id="shop-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; max-width: 1000px; margin: 0 auto;"></div>
-        <div style="text-align: center; margin-top: 40px; margin-bottom: 40px;">
-            <button id="btn-next-round" style="padding: 12px 40px; font-size: 18px; cursor: pointer; background: gold; border: none; color: black; font-weight: bold; border-radius: 4px;">Next Round</button>
+      <div id="shop-layer" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); color: white; pointer-events: auto; flex-direction: column;">
+        <div id="shop-content" style="flex: 1; overflow-y: auto; padding: 20px; box-sizing: border-box;">
+            <h1 style="text-align: center; color: gold; font-family: 'Inter', sans-serif;">Weapon Shop</h1>
+            <div id="shop-player-status" style="margin-bottom: 20px; max-width: 800px; margin-left: auto; margin-right: auto; border-bottom: 1px solid #444; padding-bottom: 10px;"></div>
+            <div id="shop-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; max-width: 1000px; margin: 0 auto;"></div>
+        </div>
+        <div id="shop-footer" style="padding: 20px; background: rgba(20, 20, 25, 0.9); border-top: 1px solid #444; text-align: center; backdrop-filter: blur(10px);">
+            <button id="btn-next-round" style="padding: 12px 40px; font-size: 18px; cursor: pointer; background: gold; border: none; color: black; font-weight: bold; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">Next Round</button>
         </div>
       </div>
     `;
@@ -295,7 +297,7 @@ export class UIManager {
         const controlsRight = document.getElementById('controls-right');
 
         if (state.phase === 'SHOP') {
-            this.shopContainer!.style.display = 'block';
+            this.shopContainer!.style.display = 'flex';
             this.buildShopGrid();
             if (hud) hud.style.display = 'none';
             if (controlsLeft) controlsLeft.style.display = 'none';

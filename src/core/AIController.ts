@@ -1,6 +1,7 @@
 import type { GameState, TankState } from './GameState';
 import { TerrainSystem } from '../systems/TerrainSystem';
 import { CONSTANTS } from './GameState';
+import { WEAPONS } from './WeaponData';
 
 const AI_CONSTANTS = {
     MAX_SCREEN_WIDTH: 800,
@@ -275,6 +276,10 @@ export class AIController {
         const startX = tank.x;
         const startY = tank.y - 15; // Muzzle
         
+        const weaponStats = WEAPONS[tank.currentWeapon] || WEAPONS['baby_missile'];
+        const blastRadius = weaponStats.radius || 20;
+        const safeDistance = blastRadius + 25; // Buffer
+
         // Direction logic
         const dx = target.x - tank.x;
         const targetIsRight = dx > 0;
@@ -307,12 +312,21 @@ export class AIController {
                 const result = this.simulateShot(startX, startY, angle, power, gravity, wind, terrain, target, state.borderMode);
 
                 if (result.hitTarget) {
-                    return { angle, power }; 
+                    // Safety Check: Did we hit too close to ourselves?
+                    const impactDist = Math.sqrt(Math.pow(result.x - tank.x, 2) + Math.pow(result.y - tank.y, 2));
+                    if (impactDist > safeDistance) {
+                        return { angle, power }; 
+                    }
+                    // Else: Hit but unsafe. Treat as not found (continue search)
                 }
 
                 if (result.minDist !== undefined) {
-                    if (!bestMiss || result.minDist < bestMiss.dist) {
-                        bestMiss = { angle, power, dist: result.minDist };
+                    // Only consider safe misses as fallback candidates
+                    const missImpactDist = Math.sqrt(Math.pow(result.x - tank.x, 2) + Math.pow(result.y - tank.y, 2));
+                    if (missImpactDist > safeDistance) {
+                        if (!bestMiss || result.minDist < bestMiss.dist) {
+                            bestMiss = { angle, power, dist: result.minDist };
+                        }
                     }
                 }
 
@@ -338,7 +352,7 @@ export class AIController {
         terrain: TerrainSystem,
         target: TankState,
         borderMode?: string
-    ): { hitTarget: boolean, overshot: boolean, hitTerrain: boolean, minDist?: number } {
+    ): { hitTarget: boolean, overshot: boolean, hitTerrain: boolean, minDist?: number, x: number, y: number } {
         
         const rad = angleDeg * (Math.PI / 180);
         const speed = power * 0.5;
@@ -348,7 +362,7 @@ export class AIController {
         let y = y0;
 
         const dt = AI_CONSTANTS.SIMULATION_STEP;
-        const targetRadius = 25; // slightly lenient for AI calc
+        const targetRadius = 25; 
 
         const handleWrap = () => {
              if (x < 0) x += CONSTANTS.SCREEN_WIDTH;
@@ -372,7 +386,7 @@ export class AIController {
                 }
             }
             if (borderMode === 'concrete' || borderMode === 'normal') {
-                if (x < 0 || x > CONSTANTS.SCREEN_WIDTH) return { hitTarget: false, overshot: true, hitTerrain: false, minDist };
+                if (x < 0 || x > CONSTANTS.SCREEN_WIDTH) return { hitTarget: false, overshot: true, hitTerrain: false, minDist, x, y };
             }
 
             const dx = x - target.x;
@@ -381,23 +395,22 @@ export class AIController {
             if (dist < minDist) minDist = dist;
 
             if (dist < targetRadius) {
-                return { hitTarget: true, overshot: false, hitTerrain: false, minDist };
+                return { hitTarget: true, overshot: false, hitTerrain: false, minDist, x, y };
             }
 
-            // Optimization: If we are way below target and moving down, we missed
             if (y > target.y + 100 && vy > 0) {
                  const distX = (x - target.x) * direction;
-                 return { hitTarget: false, overshot: distX > 0, hitTerrain: true, minDist };
+                 return { hitTarget: false, overshot: distX > 0, hitTerrain: true, minDist, x, y };
             }
 
             if (terrain.isSolid(x, y) || y > CONSTANTS.SCREEN_HEIGHT) {
                  const distX = (x - target.x) * direction;
-                 return { hitTarget: false, overshot: distX > 0, hitTerrain: true, minDist };
+                 return { hitTarget: false, overshot: distX > 0, hitTerrain: true, minDist, x, y };
             }
         }
 
         const finalDist = (x - target.x) * direction;
-        return { hitTarget: false, overshot: finalDist > 0, hitTerrain: false, minDist };
+        return { hitTarget: false, overshot: finalDist > 0, hitTerrain: false, minDist, x, y };
     }
 
     private chooseWeapon(tank: TankState, target: TankState, state: GameState): string {

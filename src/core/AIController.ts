@@ -275,27 +275,30 @@ export class AIController {
         const startX = tank.x;
         const startY = tank.y - 15; // Muzzle
         
-        const angles: number[] = [];
-        // Optimize angle search range based on target direction
+        // Direction logic
+        const dx = target.x - tank.x;
+        const targetIsRight = dx > 0;
         
-        // Search around base angle first, then expand
-        // Or just sweep 0-180 but sort by proximity to baseAngle
-        for (let a = opts.minAngle; a <= opts.maxAngle; a += opts.angleStep) angles.push(a);
+        let searchMin = targetIsRight ? 0 : 80;
+        let searchMax = targetIsRight ? 100 : 180;
+        
+        searchMin = Math.max(opts.minAngle, searchMin);
+        searchMax = Math.min(opts.maxAngle, searchMax);
+
+        const angles: number[] = [];
+        for (let a = searchMin; a <= searchMax; a += opts.angleStep) angles.push(a);
 
         if (opts.preferLowArc) {
-            // Sort by abs diff from 0 or 180?
-            // Low arc means closer to 0 or 180.
-            angles.sort((a, b) => Math.min(Math.abs(a), Math.abs(180-a)) - Math.min(Math.abs(b), Math.abs(180-b)));
+            const ideal = targetIsRight ? 0 : 180;
+            angles.sort((a, b) => Math.abs(a - ideal) - Math.abs(b - ideal));
         } else {
-             // Prefer high arc (closer to 90)
             angles.sort((a, b) => Math.abs(a - 90) - Math.abs(b - 90));
         }
 
-        // Adaptive Difficulty: Spoiler/Cyborg get more iterations
         const powerSteps = (this.actualPersonality === AIPersonality.CYBORG || this.actualPersonality === AIPersonality.SPOILER) ? 12 : 8;
+        let bestMiss: { angle: number, power: number, dist: number } | null = null;
 
         for (const angle of angles) {
-            // Binary Search for Power [0, 1000]
             let low = 0;
             let high = 1000;
             
@@ -307,12 +310,22 @@ export class AIController {
                     return { angle, power }; 
                 }
 
+                if (result.minDist !== undefined) {
+                    if (!bestMiss || result.minDist < bestMiss.dist) {
+                        bestMiss = { angle, power, dist: result.minDist };
+                    }
+                }
+
                 if (result.overshot) {
                     high = power;
                 } else {
                     low = power;
                 }
             }
+        }
+
+        if ((this.actualPersonality === AIPersonality.CYBORG || this.actualPersonality === AIPersonality.SPOILER) && bestMiss) {
+            return { angle: bestMiss.angle, power: bestMiss.power };
         }
 
         return null;
@@ -325,7 +338,7 @@ export class AIController {
         terrain: TerrainSystem,
         target: TankState,
         borderMode?: string
-    ): { hitTarget: boolean, overshot: boolean, hitTerrain: boolean } {
+    ): { hitTarget: boolean, overshot: boolean, hitTerrain: boolean, minDist?: number } {
         
         const rad = angleDeg * (Math.PI / 180);
         const speed = power * 0.5;
@@ -343,6 +356,7 @@ export class AIController {
         };
 
         const direction = target.x > x0 ? 1 : -1;
+        let minDist = Infinity;
 
         for (let t = 0; t < AI_CONSTANTS.SIMULATION_MAX_TIME; t += dt) {
             vx += wind * dt * 6;
@@ -358,30 +372,32 @@ export class AIController {
                 }
             }
             if (borderMode === 'concrete' || borderMode === 'normal') {
-                if (x < 0 || x > CONSTANTS.SCREEN_WIDTH) return { hitTarget: false, overshot: true, hitTerrain: false };
+                if (x < 0 || x > CONSTANTS.SCREEN_WIDTH) return { hitTarget: false, overshot: true, hitTerrain: false, minDist };
             }
 
             const dx = x - target.x;
             const dy = y - (target.y - 10);
-            if (dx*dx + dy*dy < targetRadius*targetRadius) {
-                return { hitTarget: true, overshot: false, hitTerrain: false };
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < minDist) minDist = dist;
+
+            if (dist < targetRadius) {
+                return { hitTarget: true, overshot: false, hitTerrain: false, minDist };
             }
 
             // Optimization: If we are way below target and moving down, we missed
             if (y > target.y + 100 && vy > 0) {
-                 // Check if we passed X
-                 const dist = (x - target.x) * direction;
-                 return { hitTarget: false, overshot: dist > 0, hitTerrain: true };
+                 const distX = (x - target.x) * direction;
+                 return { hitTarget: false, overshot: distX > 0, hitTerrain: true, minDist };
             }
 
             if (terrain.isSolid(x, y) || y > CONSTANTS.SCREEN_HEIGHT) {
-                 const dist = (x - target.x) * direction;
-                 return { hitTarget: false, overshot: dist > 0, hitTerrain: true };
+                 const distX = (x - target.x) * direction;
+                 return { hitTarget: false, overshot: distX > 0, hitTerrain: true, minDist };
             }
         }
 
         const finalDist = (x - target.x) * direction;
-        return { hitTarget: false, overshot: finalDist > 0, hitTerrain: false };
+        return { hitTarget: false, overshot: finalDist > 0, hitTerrain: false, minDist };
     }
 
     private chooseWeapon(tank: TankState, target: TankState, state: GameState): string {

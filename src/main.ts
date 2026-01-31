@@ -3,22 +3,25 @@ import { GameEngine } from './core/GameEngine';
 import { TouchControls } from './ui/TouchControls';
 import { library, dom } from "@fortawesome/fontawesome-svg-core";
 import { faGear, faBolt, faBomb, faHeart, faShieldAlt, faCoins, faWind } from "@fortawesome/free-solid-svg-icons";
+import { registerSW } from 'virtual:pwa-register';
+
+// Register Service Worker
+registerSW({
+  onNeedRefresh() {
+    // Show a prompt to user? For now, just auto-reload or ignore
+    // updateSW(true);
+    console.log("New content available, reload to update.");
+  },
+  onOfflineReady() {
+    console.log("App is ready for offline use.");
+  },
+});
 
 // Add icons to the library
 library.add(faGear, faBolt, faBomb, faHeart, faShieldAlt, faCoins, faWind);
 
 // Automatically replace <i> tags with <svg>
 dom.watch();
-
-// Unregister Service Workers (Dev Mode Fix for Zombie SWs)
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then((registrations) => {
-    for (const registration of registrations) {
-      console.log('Unregistering Service Worker:', registration);
-      registration.unregister();
-    }
-  });
-}
 
 const init = () => {
   let app = document.querySelector<HTMLDivElement>('#app');

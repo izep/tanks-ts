@@ -29,8 +29,13 @@ export class ShopSystem {
         return false;
     }
 
-    public handleBuyWeapon(state: GameState, weaponId: string) {
-        const tank = state.tanks[state.currentPlayerIndex];
+    public handleBuyWeapon(state: GameState, weaponId: string, tankId?: number) {
+        const tank = tankId !== undefined
+            ? state.tanks.find(t => t.id === tankId)
+            : state.tanks[state.currentPlayerIndex];
+
+        if (!tank) return;
+
         const weapon = WEAPONS[weaponId];
 
         if (tank.credits >= weapon.cost) {

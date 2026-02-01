@@ -10,7 +10,6 @@ import { PlayerInputSystem } from '../systems/PlayerInputSystem';
 import { AISystem } from '../systems/AISystem';
 import { ShopSystem } from '../systems/ShopSystem';
 import { GameFlowSystem } from '../systems/GameFlowSystem';
-import { WEAPONS } from './WeaponData';
 import { 
     DefaultBorderStrategy, 
     WrapBorderStrategy, 
@@ -223,47 +222,6 @@ export class GameEngine {
         }
     }
 
-    private handleBuyWeapon(weaponId: string, tankId?: number) {
-        const tank = tankId ? this.state.tanks.find(t => t.id === tankId) : this.state.tanks[this.state.currentPlayerIndex];
-        if (!tank) return;
-        const weapon = WEAPONS[weaponId];
-
-        if (tank.credits >= weapon.cost) {
-            // Check for Items
-            if (weapon.type === 'item') {
-                tank.credits -= weapon.cost;
-                this.soundManager.playUI(); // Success sound
-
-                if (weaponId === 'fuel_can') {
-                    tank.fuel += (weapon.effectValue || 250);
-                    console.log(`Bought Fuel. Current: ${tank.fuel}`);
-                } else if (weaponId === 'shield') {
-                    tank.accessories['shield'] = (tank.accessories['shield'] || 0) + (weapon.effectValue || 1);
-                    console.log(`Bought Shield. Count: ${tank.accessories['shield']}`);
-                } else if (weaponId === 'parachute') {
-                    tank.accessories['parachute'] = (tank.accessories['parachute'] || 0) + (weapon.effectValue || 1);
-                    console.log(`Bought Parachute. Count: ${tank.accessories['parachute']}`);
-                } else if (weaponId === 'battery') {
-                    tank.accessories['battery'] = (tank.accessories['battery'] || 0) + 1;
-                    console.log(`Bought Battery. Count: ${tank.accessories['battery']}`);
-                }
-                return;
-            }
-
-            // Infinite check for weapons
-            if (tank.inventory[weaponId] === -1) {
-                this.soundManager.playUI(); // Already have it
-                return;
-            }
-
-            tank.credits -= weapon.cost;
-            tank.inventory[weaponId] = (tank.inventory[weaponId] || 0) + 1;
-            this.soundManager.playUI(); // Success sound
-        } else {
-            // Fail sound
-        }
-    }
-
     private render() {
         this.renderSystem.render(this.state);
         this.uiManager.update(this.state);
@@ -276,7 +234,7 @@ export class GameEngine {
                 for (const itemId in purchases) {
                     const quantity = purchases[itemId];
                     for (let i = 0; i < quantity; i++) {
-                        this.handleBuyWeapon(itemId, tank.id);
+                        this.shopSystem.handleBuyWeapon(this.state, itemId, tank.id);
                     }
                 }
             }

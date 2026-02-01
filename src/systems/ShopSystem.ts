@@ -9,6 +9,26 @@ export class ShopSystem {
         this.soundManager = soundManager;
     }
 
+    public initShopTurn(state: GameState): boolean {
+        // Find first human player
+        const firstHumanIndex = state.tanks.findIndex(t => !t.isAi);
+        if (firstHumanIndex !== -1) {
+            state.currentPlayerIndex = firstHumanIndex;
+            return true;
+        }
+        return false; // No humans
+    }
+
+    public tryNextShopTurn(state: GameState): boolean {
+        // Find next human player after current index
+        const nextHumanIndex = state.tanks.findIndex((t, i) => i > state.currentPlayerIndex && !t.isAi);
+        if (nextHumanIndex !== -1) {
+            state.currentPlayerIndex = nextHumanIndex;
+            return true;
+        }
+        return false;
+    }
+
     public handleBuyWeapon(state: GameState, weaponId: string) {
         const tank = state.tanks[state.currentPlayerIndex];
         const weapon = WEAPONS[weaponId];

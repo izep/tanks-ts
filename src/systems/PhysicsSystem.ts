@@ -16,6 +16,10 @@ import {
     type PhysicsContext
 } from './physics/WeaponBehavior';
 
+// Simple, fast ID generator for particles and projectiles
+let nextId = 0;
+const generateId = () => (nextId++).toString();
+
 export class PhysicsSystem {
     private terrainSystem: TerrainSystem;
     private soundManager: SoundManager;
@@ -249,7 +253,7 @@ export class PhysicsSystem {
                     const speed = Math.random() * 50 + 20;
                     const rad = (angle * Math.PI) / 180;
                     newQueue.push({
-                        id: crypto.randomUUID(),
+                        id: generateId(),
                         x: x,
                         y: y - 5,
                         vx: Math.cos(rad) * speed,
@@ -269,7 +273,7 @@ export class PhysicsSystem {
                 const speed = Math.random() * 100 + 50;
 
                 newQueue.push({
-                    id: crypto.randomUUID(),
+                    id: generateId(),
                     x: x,
                     y: y - 10,
                     vx: Math.cos(rad) * speed,
@@ -330,7 +334,7 @@ export class PhysicsSystem {
                 const speed = power * 0.5;
 
                 newQueue.push({
-                    id: crypto.randomUUID(),
+                    id: generateId(),
                     x: x,
                     y: y - 20,
                     vx: Math.cos(rad) * speed,
@@ -544,7 +548,7 @@ export class PhysicsSystem {
                 const pSpeed = speed * (0.8 + Math.random() * 0.4);
 
                 state.projectiles.push({
-                    id: crypto.randomUUID(),
+                    id: generateId(),
                     x: startX,
                     y: startY,
                     vx: Math.cos(newRad) * pSpeed,
@@ -564,7 +568,7 @@ export class PhysicsSystem {
         const vy = -Math.sin(rad) * speed;
 
         const projectile: ProjectileState = {
-            id: crypto.randomUUID(),
+            id: generateId(),
             x: startX,
             y: startY,
             vx: vx,
@@ -585,7 +589,7 @@ export class PhysicsSystem {
                 const newVy = -Math.sin(newRad) * speed;
 
                 state.projectiles.push({
-                    id: crypto.randomUUID(),
+                    id: generateId(),
                     x: startX,
                     y: startY,
                     vx: newVx,

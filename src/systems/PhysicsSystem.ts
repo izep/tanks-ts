@@ -105,8 +105,8 @@ export class PhysicsSystem {
             if (!shouldRemove && !this.isParticle(proj.weaponType) && !this.isDigger(proj.weaponType)) {
                 // Check Collision
                 if (this.checkCollision(state, proj)) {
-                    // Special Handling for Segway (Start Rolling)
-                    if (proj.weaponType === 'segway' && proj.state !== 'rolling') {
+                    // Special Handling for Rollers (Start Rolling)
+                    if (this.isRoller(proj.weaponType) && proj.state !== 'rolling') {
                         this.startRolling(proj);
                     } else if (proj.weaponType === 'leapfrog') {
                         // Leapfrog Logic (handled in behavior mostly, but if we are here it hit something)
@@ -177,6 +177,11 @@ export class PhysicsSystem {
     private isDigger(type: string): boolean {
         return type === 'digger' || type === 'baby_digger' || type === 'heavy_digger' ||
             type === 'sandhog' || type === 'baby_sandhog' || type === 'heavy_sandhog';
+    }
+
+    private isRoller(weaponId: string): boolean {
+        const weaponStats = WEAPONS[weaponId];
+        return weaponStats?.type === 'roller';
     }
 
     private startRolling(proj: ProjectileState) {
@@ -315,6 +320,20 @@ export class PhysicsSystem {
                 }
             }
             this.terrainSystem.addTerrain(state, dirtX, dirtY, radius);
+            
+            // Add visual explosion for dirt
+            state.explosions.push({
+                id: Math.random(),
+                x: dirtX, 
+                y: dirtY,
+                maxRadius: radius * 1.2,
+                currentRadius: 0,
+                duration: 0.5,
+                elapsed: 0,
+                color: weaponStats.color || '#A0522D'
+            });
+            this.soundManager.playExplosion();
+            return;
         } else {
             // Default Explosion
             this.terrainSystem.explode(state, x, y, radius);

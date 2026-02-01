@@ -179,8 +179,8 @@ export class PhysicsSystem {
             type === 'sandhog' || type === 'baby_sandhog' || type === 'heavy_sandhog';
     }
 
-    private isRoller(weaponId: string): boolean {
-        const weaponStats = WEAPONS[weaponId];
+    private isRoller(weaponType: string): boolean {
+        const weaponStats = WEAPONS[weaponType];
         return weaponStats?.type === 'roller';
     }
 

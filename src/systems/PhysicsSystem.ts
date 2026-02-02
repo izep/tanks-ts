@@ -161,9 +161,22 @@ export class PhysicsSystem {
         }
 
         // Remove projectiles
-        const uniqueToRemove = [...new Set(toRemove)].sort((a, b) => b - a);
-        for (const idx of uniqueToRemove) {
-            state.projectiles.splice(idx, 1);
+        if (toRemove.length > 0) {
+            let writeIdx = 0;
+            let removePtr = 0;
+            for (let readIdx = 0; readIdx < state.projectiles.length; readIdx++) {
+                if (removePtr < toRemove.length && readIdx === toRemove[removePtr]) {
+                    // Skip this element
+                    removePtr++;
+                } else {
+                    // Keep this element
+                    if (readIdx !== writeIdx) {
+                        state.projectiles[writeIdx] = state.projectiles[readIdx];
+                    }
+                    writeIdx++;
+                }
+            }
+            state.projectiles.length = writeIdx;
         }
 
         // Check for phase change

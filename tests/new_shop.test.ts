@@ -62,10 +62,10 @@ describe('ShopSystem', () => {
     });
 
     it('should allow buying a weapon if player has enough credits', () => {
-        // Assume 'missile' cost is 2000 (from WeaponData)
-        // WEAPONS should be available if imported
         const weaponId = 'missile';
-        const cost = WEAPONS[weaponId].cost;
+        const weapon = WEAPONS[weaponId];
+        const cost = weapon.cost;
+        const bundleSize = weapon.bundleSize;
 
         // Reset inventory for test
         mockState.tanks[0].inventory[weaponId] = 0;
@@ -74,7 +74,7 @@ describe('ShopSystem', () => {
         shopSystem.handleBuyWeapon(mockState, weaponId);
 
         expect(mockState.tanks[0].credits).toBe(100);
-        expect(mockState.tanks[0].inventory[weaponId]).toBe(1);
+        expect(mockState.tanks[0].inventory[weaponId]).toBe(bundleSize);
     });
 
     it('should not allow buying a weapon if player does not have enough credits', () => {

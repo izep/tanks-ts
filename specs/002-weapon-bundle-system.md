@@ -1,3 +1,5 @@
+## Status: COMPLETE
+
 # Spec 002: Weapon Bundle System
 
 **Priority:** Critical  
@@ -35,13 +37,13 @@ Bundle sizes (from Requirements.md):
 
 ## Acceptance Criteria
 
-- [ ] `bundleSize` added to `WeaponStats` interface
-- [ ] All weapons have correct `bundleSize` from spec
-- [ ] Purchasing adds `bundleSize` items to inventory
-- [ ] Cannot exceed 99 items per slot
-- [ ] Shop UI shows bundle size (e.g., "x5")
-- [ ] Tests verify bundle purchases work correctly
-- [ ] Build succeeds
+- [x] `bundleSize` added to `WeaponStats` interface
+- [x] All weapons have correct `bundleSize` from spec
+- [x] Purchasing adds `bundleSize` items to inventory
+- [x] Cannot exceed 99 items per slot
+- [x] Shop UI shows bundle size (e.g., "x5")
+- [x] Tests verify bundle purchases work correctly
+- [x] Build succeeds
 
 ## Verification
 
@@ -56,4 +58,4 @@ Bundle sizes (from Requirements.md):
 
 **Output when complete:** `<promise>DONE</promise>`
 
-<!-- NR_OF_TRIES: 0 -->
+<!-- NR_OF_TRIES: 1 -->

@@ -357,7 +357,7 @@ export class UIManager {
                 </div>
                 <div style="font-size: 12px; color: #aaa; margin-bottom: 5px;">${weapon.description}</div>
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="color: gold;">$${weapon.cost}</div>
+                    <div style="color: gold;">$${weapon.cost}${weapon.bundleSize > 1 ? ` (x${weapon.bundleSize})` : ''}</div>
                     <div id="shop-count-${key}" style="color: white;">x0</div>
                 </div>
             `;

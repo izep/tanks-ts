@@ -5,6 +5,7 @@ export interface WeaponStats {
     damage: number; // Max damage
     color: string;
     description: string;
+    bundleSize: number; // How many items per purchase
     // Special properties
     type?: 'missile' | 'mirv' | 'nuke' | 'dirt' | 'roller' | 'digger' | 'napalm' | 'item' | 'bouncer' | 'riot_charge' | 'sandhog' | 'dirt_destroyer' | 'liquid_dirt' | 'dirt_charge' | 'earth_disrupter' | 'plasma' | 'laser';
     effectValue?: number; // e.g., fuel amount, shield count
@@ -59,7 +60,8 @@ export const WEAPONS: Record<string, WeaponStats> = {
         radius: 20,
         damage: 50,
         color: '#FFFFFF',
-        description: 'Standard issue. Weak but infinite.'
+        description: 'Standard issue. Weak but infinite.',
+        bundleSize: 10
     },
     'missile': {
         name: 'Missile',
@@ -67,7 +69,8 @@ export const WEAPONS: Record<string, WeaponStats> = {
         radius: 40,
         damage: 100,
         color: '#FFCC00',
-        description: 'Standard explosive.'
+        description: 'Standard explosive.',
+        bundleSize: 5
     },
     'nuke': {
         name: 'Nuke',
@@ -75,7 +78,8 @@ export const WEAPONS: Record<string, WeaponStats> = {
         radius: 120,
         damage: 500,
         color: '#FF4400',
-        description: 'Huge explosion. Dangerous.'
+        description: 'Huge explosion. Dangerous.',
+        bundleSize: 1
     },
     'mirv': {
         name: 'MIRV',
@@ -84,7 +88,8 @@ export const WEAPONS: Record<string, WeaponStats> = {
         damage: 80,
         color: '#FF00FF',
         description: 'Splits into multiple warheads.',
-        type: 'mirv'
+        type: 'mirv',
+        bundleSize: 3
     },
     'dirt_clod': {
         name: 'Dirt Clod',
@@ -93,7 +98,8 @@ export const WEAPONS: Record<string, WeaponStats> = {
         damage: 0,
         color: '#A0522D',
         description: 'Explodes into a sphere of dirt.',
-        type: 'dirt'
+        type: 'dirt',
+        bundleSize: 10
     },
     'dirt_ball': {
         name: 'Dirt Ball',
@@ -102,7 +108,8 @@ export const WEAPONS: Record<string, WeaponStats> = {
         damage: 0,
         color: '#8B4513',
         description: 'A larger form of Dirt Clod.',
-        type: 'dirt'
+        type: 'dirt',
+        bundleSize: 5
     },
     'ton_of_dirt': {
         name: 'Ton of Dirt',
@@ -111,7 +118,8 @@ export const WEAPONS: Record<string, WeaponStats> = {
         damage: 0,
         color: '#5C4033',
         description: 'A very large Dirt Ball.',
-        type: 'dirt'
+        type: 'dirt',
+        bundleSize: 2
     },
     'liquid_dirt': {
         name: 'Liquid Dirt',
@@ -120,7 +128,8 @@ export const WEAPONS: Record<string, WeaponStats> = {
         damage: 0,
         color: '#E6D2B5',
         description: 'Oozes out where it lands, filling holes.',
-        type: 'liquid_dirt'
+        type: 'liquid_dirt',
+        bundleSize: 10
     },
     'dirt_charge': {
         name: 'Dirt Charge',
@@ -129,7 +138,8 @@ export const WEAPONS: Record<string, WeaponStats> = {
         damage: 0,
         color: '#9B7653',
         description: 'Expels a cloud of dirt in a wedge shape.',
-        type: 'dirt_charge'
+        type: 'dirt_charge',
+        bundleSize: 5
     },
     'earth_disrupter': {
         name: 'Earth Disrupter',
@@ -138,7 +148,8 @@ export const WEAPONS: Record<string, WeaponStats> = {
         damage: 0,
         color: '#000000',
         description: 'Forces all suspended dirt to settle.',
-        type: 'earth_disrupter'
+        type: 'earth_disrupter',
+        bundleSize: 10
     },
     'plasma_blast': {
         name: 'Plasma Blast',
@@ -147,7 +158,8 @@ export const WEAPONS: Record<string, WeaponStats> = {
         damage: 200,
         color: '#00FFFF',
         description: 'Expels radioactive energy from your tank.',
-        type: 'plasma'
+        type: 'plasma',
+        bundleSize: 5
     },
     'laser': {
         name: 'Laser',
@@ -156,7 +168,8 @@ export const WEAPONS: Record<string, WeaponStats> = {
         damage: 150,
         color: '#FF0000',
         description: 'Shoots a high-intensity beam of light.',
-        type: 'laser'
+        type: 'laser',
+        bundleSize: 5
     },
     'funky_bomb': {
         name: 'Funky Bomb',
@@ -164,7 +177,8 @@ export const WEAPONS: Record<string, WeaponStats> = {
         radius: 40,
         damage: 150,
         color: '#00FF00',
-        description: 'Moves erratically.'
+        description: 'Moves erratically.',
+        bundleSize: 2
     },
     'segway': {
         name: 'Roller',
@@ -173,7 +187,8 @@ export const WEAPONS: Record<string, WeaponStats> = {
         damage: 100,
         color: '#00FFFF',
         description: 'Rolls along the ground.',
-        type: 'roller'
+        type: 'roller',
+        bundleSize: 5
     },
     'baby_nuke': {
         name: 'Baby Nuke',
@@ -182,6 +197,7 @@ export const WEAPONS: Record<string, WeaponStats> = {
         damage: 200,
         color: '#FF6600',
         description: 'Smaller nuke.',
+        bundleSize: 3
     },
     'death_head': {
         name: 'Death Head',
@@ -190,7 +206,8 @@ export const WEAPONS: Record<string, WeaponStats> = {
         damage: 1000,
         color: '#440000',
         description: 'The ultimate weapon.',
-        type: 'mirv' // Technically behaves like huge MIRV in some versions, but standard is just massive explosion
+        type: 'mirv', // Technically behaves like huge MIRV in some versions, but standard is just massive explosion
+        bundleSize: 1
     },
     'digger': {
         name: 'Digger',
@@ -199,7 +216,8 @@ export const WEAPONS: Record<string, WeaponStats> = {
         damage: 0,
         color: '#888888',
         description: 'Digs a tunnel through terrain.',
-        type: 'digger'
+        type: 'digger',
+        bundleSize: 5
     },
     'napalm': {
         name: 'Napalm',
@@ -208,7 +226,8 @@ export const WEAPONS: Record<string, WeaponStats> = {
         damage: 40, // Low direct damage, burns terrain
         color: '#FF2200',
         description: 'Burns terrain and tanks.',
-        type: 'napalm'
+        type: 'napalm',
+        bundleSize: 10
     },
     'hot_napalm': {
         name: 'Hot Napalm',
@@ -217,7 +236,8 @@ export const WEAPONS: Record<string, WeaponStats> = {
         damage: 80,
         color: '#FF8800',
         description: 'More intense burn.',
-        type: 'napalm'
+        type: 'napalm',
+        bundleSize: 2
     },
     'riot_charge': {
         name: 'Riot Charge',
@@ -226,7 +246,8 @@ export const WEAPONS: Record<string, WeaponStats> = {
         damage: 0,
         color: '#D3D3D3',
         description: 'Destroys a wedge-shaped section of dirt from your turret.',
-        type: 'riot_charge'
+        type: 'riot_charge',
+        bundleSize: 10
     },
     'riot_blast': {
         name: 'Riot Blast',
@@ -235,7 +256,8 @@ export const WEAPONS: Record<string, WeaponStats> = {
         damage: 0,
         color: '#A9A9A9',
         description: 'A larger version of the Riot Charge.',
-        type: 'riot_charge'
+        type: 'riot_charge',
+        bundleSize: 5
     },
     'heavy_riot_bomb': {
         name: 'Heavy Riot Bomb',
@@ -244,7 +266,8 @@ export const WEAPONS: Record<string, WeaponStats> = {
         damage: 0,
         color: '#E0E0E0',
         description: 'A scaled up version of Riot Bomb.',
-        type: 'dirt_destroyer'
+        type: 'dirt_destroyer',
+        bundleSize: 2
     },
     'baby_digger': {
         name: 'Baby Digger',
@@ -253,7 +276,8 @@ export const WEAPONS: Record<string, WeaponStats> = {
         damage: 0,
         color: '#C0C0C0',
         description: 'Tunnels through terrain when it hits.',
-        type: 'digger'
+        type: 'digger',
+        bundleSize: 10
     },
     'heavy_digger': {
         name: 'Heavy Digger',
@@ -262,7 +286,8 @@ export const WEAPONS: Record<string, WeaponStats> = {
         damage: 0,
         color: '#696969',
         description: 'The largest Digger-weapon available.',
-        type: 'digger'
+        type: 'digger',
+        bundleSize: 2
     },
     'baby_sandhog': {
         name: 'Baby Sandhog',
@@ -271,7 +296,8 @@ export const WEAPONS: Record<string, WeaponStats> = {
         damage: 50,
         color: '#DAA520',
         description: 'Tunnels and contains a small explosive charge.',
-        type: 'sandhog'
+        type: 'sandhog',
+        bundleSize: 10
     },
     'sandhog': {
         name: 'Sandhog',
@@ -280,7 +306,8 @@ export const WEAPONS: Record<string, WeaponStats> = {
         damage: 80,
         color: '#B8860B',
         description: 'Contains more warheads than the Baby Sandhog.',
-        type: 'sandhog'
+        type: 'sandhog',
+        bundleSize: 5
     },
     'heavy_sandhog': {
         name: 'Heavy Sandhog',
@@ -289,7 +316,8 @@ export const WEAPONS: Record<string, WeaponStats> = {
         damage: 150,
         color: '#808000',
         description: 'Can potentially destroy the world.',
-        type: 'sandhog'
+        type: 'sandhog',
+        bundleSize: 2
     },
     'riot_bomb': {
         name: 'Riot Bomb',
@@ -298,7 +326,8 @@ export const WEAPONS: Record<string, WeaponStats> = {
         damage: 0, // No damage
         color: '#FFFFFF',
         description: 'Destroys a spherical section of dirt.',
-        type: 'dirt_destroyer'
+        type: 'dirt_destroyer',
+        bundleSize: 5
     },
     'heavy_roller': {
         name: 'Heavy Roller',
@@ -307,7 +336,8 @@ export const WEAPONS: Record<string, WeaponStats> = {
         damage: 200,
         color: '#008888',
         description: 'A bigger, heavier roller.',
-        type: 'roller'
+        type: 'roller',
+        bundleSize: 2
     },
     'leapfrog': {
         name: 'LeapFrog',
@@ -316,7 +346,8 @@ export const WEAPONS: Record<string, WeaponStats> = {
         damage: 80,
         color: '#00AA00',
         description: 'Bounces 3 times before exploding.',
-        type: 'bouncer'
+        type: 'bouncer',
+        bundleSize: 2
     },
     'fuel_can': {
         name: 'Fuel (250)',
@@ -326,7 +357,8 @@ export const WEAPONS: Record<string, WeaponStats> = {
         color: '#884400',
         description: 'Restores fuel.',
         type: 'item',
-        effectValue: 250
+        effectValue: 250,
+        bundleSize: 1
     },
     'shield': {
         name: 'Shield',
@@ -336,7 +368,8 @@ export const WEAPONS: Record<string, WeaponStats> = {
         color: '#00FFFF',
         description: 'Protects from damage.',
         type: 'item',
-        effectValue: 1
+        effectValue: 1,
+        bundleSize: 1
     },
     'parachute': {
         name: 'Parachute',
@@ -346,7 +379,8 @@ export const WEAPONS: Record<string, WeaponStats> = {
         color: '#FFFFFF',
         description: 'Saves you from falls.',
         type: 'item',
-        effectValue: 1
+        effectValue: 1,
+        bundleSize: 1
     },
     'battery': {
         name: 'Battery',
@@ -356,6 +390,7 @@ export const WEAPONS: Record<string, WeaponStats> = {
         color: '#FFFF00',
         description: 'Restores 10 health points.',
         type: 'item',
-        effectValue: 10
+        effectValue: 10,
+        bundleSize: 1
     }
 };

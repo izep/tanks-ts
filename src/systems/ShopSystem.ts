@@ -66,9 +66,19 @@ export class ShopSystem {
                 return;
             }
 
-            tank.credits -= weapon.cost;
-            tank.inventory[weaponId] = (tank.inventory[weaponId] || 0) + 1;
-            this.soundManager.playUI(); // Success sound
+            const currentCount = tank.inventory[weaponId] || 0;
+            const bundleSize = weapon.bundleSize || 1;
+            const newCount = Math.min(currentCount + bundleSize, 99);
+
+            // Only purchase if we can add at least 1 item
+            if (newCount > currentCount) {
+                tank.credits -= weapon.cost;
+                tank.inventory[weaponId] = newCount;
+                this.soundManager.playUI(); // Success sound
+            } else {
+                // Already at max (99)
+                this.soundManager.playUI();
+            }
         } else {
             // Fail sound
         }

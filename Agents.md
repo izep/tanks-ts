@@ -1,90 +1,128 @@
-# Tanks-a-Lot TS Project Context
+# AI Agent Entry Point
 
-## Project Overview
+> **You're an AI coding agent.** Welcome to Tanks-a-Lot TS.
 
-**Tanks-a-Lot TS** is a modern, web-based clone of the classic artillery game "Scorched Earth," built with TypeScript and the HTML5 Canvas API. It features turn-based combat, destructible terrain, realistic physics (gravity, wind), a variety of weapons, and an in-game economy.
+---
 
-**Tech Stack:**
-*   **Language:** TypeScript (Strict Mode)
-*   **Build System:** Vite
-*   **Testing:** Vitest
-*   **Rendering:** HTML5 Canvas (no 3D engine libraries)
-*   **Icons:** FontAwesome
-*   **Platform:** Web / Progressive Web App (PWA)
+## Quick Start
 
-**Architecture:**
-The project follows an **Entity-Component-System (ECS) inspired architecture**, though adapted for this specific use case:
-*   **State (`src/core/GameState.ts`):** A centralized, JSON-serializable object (`GameState`) holds all game data (tanks, projectiles, terrain status, game phase).
-*   **Systems (`src/systems/*.ts`):** Stateless logic classes (e.g., `PhysicsSystem`, `TerrainSystem`, `AISystem`) that operate on the `GameState`.
-*   **Engine (`src/core/GameEngine.ts`):** The central coordinator that manages the game loop, initializes systems, and handles top-level state transitions.
+1. **Read the constitution:** `.specify/memory/constitution.md`
+2. **Check your mode:**
+   - **Ralph Loop:** You were started by `scripts/ralph-loop.sh` — focus on completing ONE spec
+   - **Interactive:** Normal conversation — help the user create specs or answer questions
 
-## Building and Running
+---
 
-The project uses `npm` scripts defined in `package.json`.
+## Ralph Loop Mode
 
-*   **Install Dependencies:**
-    ```bash
-    npm install
-    ```
+If started by ralph-loop.sh, follow this process:
 
-*   **Run Development Server:**
-    ```bash
-    npm run dev
-    ```
-    Starts the Vite dev server (usually at `http://localhost:5173`).
+### 1. Orient
+```bash
+# Read these files (in order):
+- .specify/memory/constitution.md     # Project principles
+- specs/*.md                          # All specifications (find incomplete ones)
+- history/*.md                        # Lessons learned from previous attempts
+- TODO.md                             # Implementation plan reference
+- Requirements.md                     # Full specification
+```
 
-*   **Run Tests:**
-    ```bash
-    npm test
-    ```
-    Runs the Vitest test suite.
+### 2. Pick Task
+- Select the highest priority incomplete spec from `specs/`
+- Check `NR_OF_TRIES` at bottom of spec — if ≥10, split into simpler specs
+- Check `history/` for relevant lessons learned
+- If top priority seems blocked or requires preconditions, pick a different achievable spec
 
-*   **Build for Production:**
-    ```bash
-    npm run build
-    ```
-    Compiles TypeScript and bundles assets into the `dist/` directory.
+### 3. Implement
+- Complete ALL acceptance criteria
+- Write/update tests as needed
+- Verify against Requirements.md
+- Follow the constitution's principles
 
-*   **Preview Production Build:**
-    ```bash
-    npm run preview
-    ```
+### 4. Document Learning
+- Add concise notes to `history/YYYY-MM-DD_brief-topic.md`
+- Record what worked, what didn't, lessons for future attempts
+- Keep notes brief but actionable
 
-*   **Deploy:**
-    ```bash
-    npm run deploy
-    ```
-    Deploys the `dist/` folder to GitHub Pages.
+### 5. Verify
+- Run tests: `npm test`
+- Check acceptance criteria: all must pass
+- Build: `npm run build` (must succeed)
 
-## Development Conventions
+### 6. Commit
+```bash
+git add .
+git commit -m "feat: [spec name] - [brief description]"
+git push
+```
 
-### Code Structure & Style
-*   **Entry Point:** `src/main.ts` initializes the DOM and the `GameEngine`.
-*   **Core Logic:** `src/core/` contains the `GameEngine`, `GameState`, and managers (`InputManager`, `SoundManager`).
-*   **Systems:** `src/systems/` contains the heavy lifting logic.
-    *   `PhysicsSystem.ts`: Projectile motion, collisions, tank movement.
-    *   `TerrainSystem.ts`: Pixel-perfect terrain destruction (canvas manipulation).
-    *   `AISystem.ts`: AI decision making.
-*   **Naming:** PascalCase for classes (`GameEngine`), camelCase for methods/variables (`handleInput`), UPPER_SNAKE_CASE for constants (`CONSTANTS.GRAVITY`).
-*   **Type Safety:** Heavy usage of TypeScript interfaces (`GameState`, `Tank`, `Projectile`). `any` is discouraged.
+### 7. Output DONE
+**ONLY** output this when 100% complete:
+```
+<promise>DONE</promise>
+```
 
-### Testing Strategy
-*   **Framework:** Vitest is used for unit testing.
-*   **Mocking:** Since the game relies heavily on the DOM (Canvas, Audio), tests typically mock these dependencies.
-    *   **Canvas Mocks:** Tests mock `CanvasRenderingContext2D` to verify drawing calls or collision logic without a real browser.
-    *   **System Isolation:** Systems are often tested in isolation by passing a mock `GameState` and asserting on the mutations.
-*   **Test Location:** All tests are located in the `tests/` directory (e.g., `tests/physics.test.ts`).
+If anything fails or is incomplete, explain what's needed and exit WITHOUT the DONE marker.
 
-### Key Implementation Details
-*   **Terrain:** The terrain is not a set of polygons but a bitmap (canvas pixel data). Destruction removes pixels directly. Gravity checks for "floating" pixels or tanks are computationally expensive and handled in `TerrainSystem`.
-*   **Game Loop:** The `GameEngine` runs a standard `requestAnimationFrame` loop, calculating `dt` (delta time) and passing it to `update()` methods of various systems.
-*   **Game Phases:** The game flow is strictly controlled via `GamePhase` enums (SETUP, AIMING, FIRING, EXPLOSION, SHOP, etc.).
+---
 
-### Common Tasks
-*   **Adding a Weapon:**
-    1.  Define properties in `src/core/WeaponData.ts`.
-    2.  If it has special physics (like splitting or digging), implement logic in `src/systems/PhysicsSystem.ts`.
-    3.  Add unit tests in `tests/weapons.test.ts`.
-*   **Adjusting AI:**
-    1.  Modify `src/core/AIController.ts` for decision logic.
-    2.  Update `src/systems/AISystem.ts` if interaction timing needs changing.
+## Interactive Mode
+
+If in normal conversation:
+
+- Help create specifications (ask about features, acceptance criteria)
+- Answer questions about the codebase
+- Explain Ralph loop when user is ready
+- Guide decisions based on constitution principles
+
+To create a spec, use the pattern in `specs/` folder (examples exist if any).
+
+---
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `.specify/memory/constitution.md` | Project guiding document |
+| `specs/*.md` | Feature specifications (what to build) |
+| `history/*.md` | Lessons learned from previous attempts |
+| `TODO.md` | 10-phase implementation plan |
+| `Requirements.md` | Full Scorched Earth specification |
+| `scripts/ralph-loop.sh` | Autonomous build loop |
+
+---
+
+## Quick Commands
+
+```bash
+# Run development server
+npm run dev
+
+# Run tests
+npm test
+
+# Build for production
+npm run build
+
+# Start Ralph loop
+./scripts/ralph-loop.sh
+
+# Limit iterations
+./scripts/ralph-loop.sh 20
+```
+
+---
+
+## Project Context
+
+This is a modern TypeScript reimplementation of Scorched Earth, the classic turn-based artillery game. The project aims to preserve the authentic gameplay while providing a smooth mobile and desktop experience.
+
+**Current Status:** ~23% complete, solid foundation in place
+
+**Architecture:** ECS-inspired with centralized GameState and stateless systems
+
+**Tech Stack:** TypeScript + Vite + Vitest + Canvas API
+
+---
+
+Ready to help build Tanks-a-Lot TS!

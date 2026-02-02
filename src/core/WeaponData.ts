@@ -55,7 +55,7 @@ export const WEAPON_ORDER = [
 export const WEAPONS: Record<string, WeaponStats> = {
     'baby_missile': {
         name: 'Baby Missile',
-        cost: 0, // Infinite
+        cost: 500,
         radius: 20,
         damage: 50,
         color: '#FFFFFF',
@@ -63,7 +63,7 @@ export const WEAPONS: Record<string, WeaponStats> = {
     },
     'missile': {
         name: 'Missile',
-        cost: 2000,
+        cost: 1875,
         radius: 40,
         damage: 100,
         color: '#FFCC00',
@@ -71,7 +71,7 @@ export const WEAPONS: Record<string, WeaponStats> = {
     },
     'nuke': {
         name: 'Nuke',
-        cost: 20000,
+        cost: 5000,
         radius: 120,
         damage: 500,
         color: '#FF4400',
@@ -79,7 +79,7 @@ export const WEAPONS: Record<string, WeaponStats> = {
     },
     'mirv': {
         name: 'MIRV',
-        cost: 10000,
+        cost: 7500,
         radius: 30,
         damage: 80,
         color: '#FF00FF',
@@ -177,7 +177,7 @@ export const WEAPONS: Record<string, WeaponStats> = {
     },
     'baby_nuke': {
         name: 'Baby Nuke',
-        cost: 5000,
+        cost: 10000,
         radius: 80,
         damage: 200,
         color: '#FF6600',
@@ -185,7 +185,7 @@ export const WEAPONS: Record<string, WeaponStats> = {
     },
     'death_head': {
         name: 'Death Head',
-        cost: 25000,
+        cost: 20000,
         radius: 150, // Massive
         damage: 1000,
         color: '#440000',
@@ -203,7 +203,7 @@ export const WEAPONS: Record<string, WeaponStats> = {
     },
     'napalm': {
         name: 'Napalm',
-        cost: 5000,
+        cost: 10000,
         radius: 60,
         damage: 40, // Low direct damage, burns terrain
         color: '#FF2200',
@@ -212,7 +212,7 @@ export const WEAPONS: Record<string, WeaponStats> = {
     },
     'hot_napalm': {
         name: 'Hot Napalm',
-        cost: 10000,
+        cost: 20000,
         radius: 90,
         damage: 80,
         color: '#FF8800',
@@ -302,7 +302,7 @@ export const WEAPONS: Record<string, WeaponStats> = {
     },
     'heavy_roller': {
         name: 'Heavy Roller',
-        cost: 10000,
+        cost: 6750,
         radius: 50,
         damage: 200,
         color: '#008888',
@@ -311,7 +311,7 @@ export const WEAPONS: Record<string, WeaponStats> = {
     },
     'leapfrog': {
         name: 'LeapFrog',
-        cost: 15000,
+        cost: 10000,
         radius: 30,
         damage: 80,
         color: '#00AA00',

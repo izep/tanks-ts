@@ -21,7 +21,12 @@ import {
 
 // Simple, fast ID generator for particles and projectiles
 let nextId = 0;
-const generateId = () => (nextId++).toString();
+export const generateId = () => (nextId++).toString();
+
+// Tank collision constants
+const TANK_COLLISION_RADIUS = 15;
+const TANK_CENTER_Y_OFFSET = 10;
+const TANK_DAMAGE_RADIUS_BUFFER = 10;
 
 export class PhysicsSystem {
     private terrainSystem: TerrainSystem;
@@ -242,9 +247,9 @@ export class PhysicsSystem {
         for (const tank of state.tanks) {
             if (tank.health <= 0) continue;
             const dx = proj.x - tank.x;
-            const dy = proj.y - (tank.y - 10);
+            const dy = proj.y - (tank.y - TANK_CENTER_Y_OFFSET);
             const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < 15) return true;
+            if (dist < TANK_COLLISION_RADIUS) return true;
         }
 
         return false;
@@ -354,9 +359,9 @@ export class PhysicsSystem {
             for (const tank of state.tanks) {
                 if (tank.health <= 0) continue;
                 const dx = x - tank.x;
-                const dy = y - (tank.y - 10);
+                const dy = y - (tank.y - TANK_CENTER_Y_OFFSET);
                 const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist < 15) {
+                if (dist < TANK_COLLISION_RADIUS) {
                     // Direct hit on tank! Center it slightly?
                     // Or just let it be. If we center it, it looks cleaner.
                     // But if we want to pile up, maybe slight offset is good.
@@ -434,11 +439,12 @@ export class PhysicsSystem {
         if (damageAmount > 0) {
             state.tanks.forEach(tank => {
                 const dx = tank.x - x;
-                const dy = (tank.y - 10) - y;
+                const dy = (tank.y - TANK_CENTER_Y_OFFSET) - y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
 
-                if (dist < radius + 10) {
-                    let damage = Math.floor(damageAmount * (1 - dist / (radius + 20)));
+                if (dist < radius + TANK_DAMAGE_RADIUS_BUFFER) {
+                    let damage = Math.floor(damageAmount * (1 - dist / (radius + TANK_DAMAGE_RADIUS_BUFFER)));
+                    damage = Math.max(0, damage); // Ensure non-negative damage
 
                     if (damage > 0) {
                         if (tank.activeShield && tank.shieldHealth && tank.shieldHealth > 0) {

@@ -173,6 +173,13 @@ export class GameEngine {
         if (this.state.phase === GamePhase.TERRAIN_SETTLING || this.state.terrainDirty) {
             try {
                 const moved = this.terrainSystem.settle(this.state);
+                
+                // Clear dirty flag if settling is complete
+                if (!moved) {
+                    this.state.terrainDirty = false;
+                }
+                
+                // Only handle phase transition if we're in TERRAIN_SETTLING phase
                 if (!moved && this.state.phase === GamePhase.TERRAIN_SETTLING) {
                     // Settling done
                     console.log("Settling done, calling nextTurn");

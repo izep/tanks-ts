@@ -2,6 +2,7 @@ import { type GameState, type ProjectileState, CONSTANTS } from '../../core/Game
 import { TerrainSystem } from '../TerrainSystem';
 import { SoundManager } from '../../core/SoundManager';
 import { WEAPONS } from '../../core/WeaponData';
+import { generateId } from '../PhysicsSystem';
 
 export interface PhysicsContext {
     terrainSystem: TerrainSystem;
@@ -29,7 +30,7 @@ export class StandardFlightBehavior implements WeaponBehavior {
                 const offsets = [-50, 50];
                 offsets.forEach(off => {
                     context.addProjectile({
-                        id: crypto.randomUUID(),
+                        id: generateId(),
                         x: projectile.x,
                         y: projectile.y,
                         vx: projectile.vx + off,
@@ -48,7 +49,7 @@ export class StandardFlightBehavior implements WeaponBehavior {
                 for (let i = 0; i < numFragments; i++) {
                     const spread = -100 + (i * 50);
                     context.addProjectile({
-                        id: crypto.randomUUID(),
+                        id: generateId(),
                         x: projectile.x,
                         y: projectile.y,
                         vx: projectile.vx + spread,

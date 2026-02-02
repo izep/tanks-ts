@@ -113,6 +113,7 @@ export class RenderSystem {
         const bodyBlob = new Blob([bodySvg], { type: 'image/svg+xml' });
         const bodyUrl = URL.createObjectURL(bodyBlob);
         const bodyImg = new Image();
+        bodyImg.onload = () => URL.revokeObjectURL(bodyUrl);
         bodyImg.src = bodyUrl;
 
         // Generate Turret
@@ -120,6 +121,7 @@ export class RenderSystem {
         const turretBlob = new Blob([turretSvg], { type: 'image/svg+xml' });
         const turretUrl = URL.createObjectURL(turretBlob);
         const turretImg = new Image();
+        turretImg.onload = () => URL.revokeObjectURL(turretUrl);
         turretImg.src = turretUrl;
 
         this.tankSpriteCache[key] = { body: bodyImg, turret: turretImg };
@@ -265,6 +267,7 @@ export class RenderSystem {
             const blob = new Blob([this.PARACHUTE_IMG], { type: 'image/svg+xml' });
             const url = URL.createObjectURL(blob);
             this._parachuteImage = new Image();
+            this._parachuteImage.onload = () => URL.revokeObjectURL(url);
             this._parachuteImage.src = url;
         }
         return this._parachuteImage;

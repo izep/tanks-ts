@@ -367,7 +367,7 @@ export const WEAPONS: Record<string, WeaponStats> = {
     },
     'fuel_can': {
         name: 'Fuel (250)',
-        cost: 2000,
+        cost: 10000,
         radius: 0,
         damage: 0,
         color: '#884400',
@@ -378,7 +378,7 @@ export const WEAPONS: Record<string, WeaponStats> = {
     },
     'shield': {
         name: 'Shield',
-        cost: 5000,
+        cost: 20000,
         radius: 0,
         damage: 0,
         color: '#00FFFF',
@@ -389,7 +389,7 @@ export const WEAPONS: Record<string, WeaponStats> = {
     },
     'parachute': {
         name: 'Parachute',
-        cost: 1000,
+        cost: 10000,
         radius: 0,
         damage: 0,
         color: '#FFFFFF',
@@ -400,7 +400,7 @@ export const WEAPONS: Record<string, WeaponStats> = {
     },
     'battery': {
         name: 'Battery',
-        cost: 1500,
+        cost: 5000,
         radius: 0,
         damage: 0,
         color: '#FFFF00',

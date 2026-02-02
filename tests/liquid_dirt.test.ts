@@ -1,7 +1,5 @@
-<<<<<<< HEAD
-=======
 
->>>>>>> 4c7770c (Merge main and resolve conflicts in ShopSystem)
+
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { PhysicsSystem } from '../src/systems/PhysicsSystem';
 import { TerrainSystem } from '../src/systems/TerrainSystem';
@@ -80,8 +78,4 @@ describe('Liquid Dirt', () => {
         // vy should be small/negative (flat splash)
         expect(Math.abs(p.vy)).toBeLessThan(50);
     });
-<<<<<<< HEAD
 });
-=======
-});
->>>>>>> 4c7770c (Merge main and resolve conflicts in ShopSystem)

@@ -5,20 +5,18 @@ import { SoundManager } from '../core/SoundManager';
 
 export class GameFlowSystem {
     private terrainSystem: TerrainSystem;
-    private physicsSystem: PhysicsSystem;
     private soundManager: SoundManager;
 
     constructor(
         terrainSystem: TerrainSystem,
-        physicsSystem: PhysicsSystem,
+        _physicsSystem: PhysicsSystem,
         soundManager: SoundManager
     ) {
         this.terrainSystem = terrainSystem;
-        this.physicsSystem = physicsSystem;
         this.soundManager = soundManager;
     }
 
-    public update(state: GameState) {
+    public update(_state: GameState) {
         // Logic moved to GameEngine to avoid duplication and split split-brain issues.
         // Eventually, GameEngine logic should be moved here, but for now we silence the duplicate execution.
     }

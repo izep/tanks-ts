@@ -19,6 +19,10 @@ import {
     type PhysicsContext
 } from './physics/WeaponBehavior';
 
+// Simple, fast ID generator for particles and projectiles
+let nextId = 0;
+const generateId = () => (nextId++).toString();
+
 export class PhysicsSystem {
     private terrainSystem: TerrainSystem;
     private soundManager: SoundManager;
@@ -119,7 +123,6 @@ export class PhysicsSystem {
                 !this.isBouncer(proj.weaponType) &&
                 proj.weaponType !== 'liquid_dirt_particle' &&
                 proj.weaponType !== 'napalm_particle') {
-
                 // Check Collision
                 if (this.checkCollision(state, proj)) {
                     // Special Handling for Rollers (Start Rolling)
@@ -271,13 +274,13 @@ export class PhysicsSystem {
                     // Random spread around impact
                     const offsetX = (Math.random() - 0.5) * 80; // +/- 40px spread
                     const startX = x + offsetX;
-
+                    
                     // Initial velocity: mostly random spread ("splash")
                     const vx = (Math.random() - 0.5) * 100; // +/- 50
                     const vy = (Math.random() - 0.5) * 20; // +/- 10
 
                     newQueue.push({
-                        id: crypto.randomUUID(),
+                        id: generateId(),
                         x: startX,
                         y: y - 2, // Slightly above ground
                         vx: vx,
@@ -294,15 +297,15 @@ export class PhysicsSystem {
             const count = 150; // High count for spread
             for (let i = 0; i < count; i++) {
                 // Random spread around impact
-                const offsetX = (Math.random() - 0.5) * 80;
+                const offsetX = (Math.random() - 0.5) * 80; 
                 const startX = x + offsetX;
-
+                
                 // Splash velocity
                 const vx = (Math.random() - 0.5) * 100;
                 const vy = (Math.random() - 0.5) * 20;
 
                 newQueue.push({
-                    id: crypto.randomUUID(),
+                    id: generateId(),
                     x: startX,
                     y: y - 5,
                     vx: vx,
@@ -345,7 +348,7 @@ export class PhysicsSystem {
             // This prevented "stacking" if the mound was already 20px radius.
             // Let's REMOVE the snapping logic so it just adds dirt where it hits.
             // This allows stacking mounds.
-
+            
             // However, if we hit the tank directly (collision), we might want to ensure the tank is covered.
             // Check if impact is inside a tank
             for (const tank of state.tanks) {
@@ -361,9 +364,9 @@ export class PhysicsSystem {
                     break;
                 }
             }
-
+            
             this.terrainSystem.addTerrain(state, dirtX, dirtY, radius);
-
+            
             // Add visual explosion for dirt
             state.explosions.push({
                 id: Math.random(),
@@ -390,7 +393,7 @@ export class PhysicsSystem {
                 const j = Math.floor(Math.random() * (i + 1));
                 [colors[i], colors[j]] = [colors[j], colors[i]];
             }
-
+            
             for (let i = 0; i < 5; i++) {
                 const angle = Math.random() * 180;
                 const power = 100 + Math.random() * 200;
@@ -398,7 +401,7 @@ export class PhysicsSystem {
                 const speed = power * 0.5;
 
                 newQueue.push({
-                    id: crypto.randomUUID(),
+                    id: generateId(),
                     x: x,
                     y: y - 20,
                     vx: Math.cos(rad) * speed,
@@ -615,7 +618,7 @@ export class PhysicsSystem {
                 const pSpeed = speed * (0.2 + Math.random() * 0.4);
 
                 state.projectiles.push({
-                    id: crypto.randomUUID(),
+                    id: generateId(),
                     x: startX,
                     y: startY,
                     vx: Math.cos(newRad) * pSpeed,
@@ -652,7 +655,7 @@ export class PhysicsSystem {
         }
 
         const projectile: ProjectileState = {
-            id: crypto.randomUUID(),
+            id: generateId(),
             x: startX,
             y: startY,
             vx: vx,
@@ -673,7 +676,7 @@ export class PhysicsSystem {
                 const newVy = -Math.sin(newRad) * speed;
 
                 state.projectiles.push({
-                    id: crypto.randomUUID(),
+                    id: generateId(),
                     x: startX,
                     y: startY,
                     vx: newVx,

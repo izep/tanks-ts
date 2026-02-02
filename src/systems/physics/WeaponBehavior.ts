@@ -162,7 +162,7 @@ export class LiquidBehavior implements WeaponBehavior {
             // Friction / Viscosity
             // If moving UPHILL (vx > 0 and slope < 0 OR vx < 0 and slope > 0), apply harsh friction
             const movingUphill = (proj.vx > 0 && slope < -2) || (proj.vx < 0 && slope > 2);
-
+            
             if (movingUphill) {
                 proj.vx *= 0.8; // Reduced drag uphill to allow sloshing
             } else {
@@ -176,7 +176,7 @@ export class LiquidBehavior implements WeaponBehavior {
                 const hLeft = context.terrainSystem.getGroundY(Math.floor(proj.x - range));
                 const hRight = context.terrainSystem.getGroundY(Math.floor(proj.x + range));
                 const myH = groundY;
-
+                
                 // If neighbors are deeper (larger Y) than me, I am on a peak/bump.
                 // Push me towards the deeper side.
                 if (hLeft > myH + 2) {
@@ -213,7 +213,7 @@ export class LiquidBehavior implements WeaponBehavior {
              context.terrainSystem.addTerrain(state, proj.x, proj.y, 2, WEAPONS['liquid_dirt']?.color || '#E6D2B5');
              return true;
         }
-
+        
         // Horizontal bounds
         if (proj.x < 0 || proj.x > CONSTANTS.SCREEN_WIDTH) {
             return true;
@@ -255,9 +255,9 @@ export class NapalmBehavior implements WeaponBehavior {
             // Friction
             const movingUphill = (proj.vx > 0 && slope < -2) || (proj.vx < 0 && slope > 2);
             if (movingUphill) {
-                proj.vx *= 0.8;
+                proj.vx *= 0.8; 
             } else {
-                proj.vx *= 0.95;
+                proj.vx *= 0.95; 
             }
 
             // Local Peak Avoidance
@@ -272,7 +272,7 @@ export class NapalmBehavior implements WeaponBehavior {
 
             // Burning Effect (Discolor ground while flowing/sitting)
             if (Math.random() < 0.3) { // More frequent burning
-                context.terrainSystem.burnTerrain(state, proj.x, proj.y, 8);
+                context.terrainSystem.burnTerrain(state, proj.x, proj.y, 8); 
                 if (Math.random() < 0.01) {
                     context.soundManager.playSizzle();
                 }
@@ -318,7 +318,7 @@ export class NapalmBehavior implements WeaponBehavior {
         if (proj.elapsedTime > 2.5) {
              return true; // Burned out
         }
-
+        
         if (proj.x < 0 || proj.x > CONSTANTS.SCREEN_WIDTH) {
             return true;
         }
@@ -333,7 +333,7 @@ export class ParticleBehavior implements WeaponBehavior {
 
         // Gravity
         proj.vy += state.gravity * dt * 5;
-
+        
         // Drag for dirt charge to limit range
         if (weaponId === 'dirt_particle') {
             proj.vx *= 0.9; // Strong air resistance
@@ -353,7 +353,7 @@ export class ParticleBehavior implements WeaponBehavior {
                  return true;
              }
         }
-
+        
         proj.x = nextX;
         proj.y = nextY;
 
@@ -388,7 +388,7 @@ export class ParticleBehavior implements WeaponBehavior {
             } else {
                 proj.vx *= 0.9; // Friction
             }
-
+            
             // Stop condition
             if (Math.abs(proj.vx) < 5) {
                 if (weaponId === 'dirt_particle') {
@@ -402,7 +402,7 @@ export class ParticleBehavior implements WeaponBehavior {
         proj.elapsedTime += dt;
         // Short life for dirt charge to ensure it settles as a cone
         const maxLife = weaponId === 'dirt_particle' ? 0.5 : 2.0;
-
+        
         if (proj.elapsedTime > maxLife) {
             if (weaponId === 'dirt_particle') {
                  context.terrainSystem.addTerrain(state, proj.x, proj.y, 4, WEAPONS['dirt_charge']?.color);

@@ -1,4 +1,3 @@
-
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { PhysicsSystem } from '../src/systems/PhysicsSystem';
 import { TerrainSystem } from '../src/systems/TerrainSystem';

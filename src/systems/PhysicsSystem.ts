@@ -278,7 +278,7 @@ export class PhysicsSystem {
                     // Random spread around impact
                     const offsetX = (Math.random() - 0.5) * 80; // +/- 40px spread
                     const startX = x + offsetX;
-
+                    
                     // Initial velocity: mostly random spread ("splash")
                     const vx = (Math.random() - 0.5) * 100; // +/- 50
                     const vy = (Math.random() - 0.5) * 20; // +/- 10
@@ -301,9 +301,9 @@ export class PhysicsSystem {
             const count = 150; // High count for spread
             for (let i = 0; i < count; i++) {
                 // Random spread around impact
-                const offsetX = (Math.random() - 0.5) * 80;
+                const offsetX = (Math.random() - 0.5) * 80; 
                 const startX = x + offsetX;
-
+                
                 // Splash velocity
                 const vx = (Math.random() - 0.5) * 100;
                 const vy = (Math.random() - 0.5) * 20;
@@ -352,7 +352,7 @@ export class PhysicsSystem {
             // This prevented "stacking" if the mound was already 20px radius.
             // Let's REMOVE the snapping logic so it just adds dirt where it hits.
             // This allows stacking mounds.
-
+            
             // However, if we hit the tank directly (collision), we might want to ensure the tank is covered.
             // Check if impact is inside a tank
             for (const tank of state.tanks) {
@@ -368,13 +368,13 @@ export class PhysicsSystem {
                     break;
                 }
             }
-
+            
             this.terrainSystem.addTerrain(state, dirtX, dirtY, radius);
-
+            
             // Add visual explosion for dirt
             state.explosions.push({
                 id: Math.random(),
-                x: dirtX,
+                x: dirtX, 
                 y: dirtY,
                 maxRadius: radius * 1.2,
                 currentRadius: 0,
@@ -397,7 +397,7 @@ export class PhysicsSystem {
                 const j = Math.floor(Math.random() * (i + 1));
                 [colors[i], colors[j]] = [colors[j], colors[i]];
             }
-
+            
             for (let i = 0; i < 5; i++) {
                 const angle = Math.random() * 180;
                 const power = 100 + Math.random() * 200;

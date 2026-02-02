@@ -136,8 +136,6 @@ export class GameEngine {
         this.isRunning = true;
         this.lastTime = performance.now();
         requestAnimationFrame(this.gameLoop.bind(this));
-
-        requestAnimationFrame(this.gameLoop.bind(this));
     }
 
     private gameLoop(timestamp: number) {

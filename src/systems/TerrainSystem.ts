@@ -37,7 +37,7 @@ export class TerrainSystem {
     private mapsLoaded: boolean = false;
 
     private terrainMask: Uint8Array;
-    private heightMap: Int16Array;
+    private heightMap: Uint16Array;
     private dirtyColumns: Set<number> = new Set();
 
     constructor(width: number, height: number) {
@@ -48,7 +48,7 @@ export class TerrainSystem {
         this.canvas.height = height;
         this.ctx = this.canvas.getContext('2d', { willReadFrequently: true })!;
         this.terrainMask = new Uint8Array(width * height);
-        this.heightMap = new Int16Array(width).fill(height);
+        this.heightMap = new Uint16Array(width).fill(height);
     }
 
     public async init() {

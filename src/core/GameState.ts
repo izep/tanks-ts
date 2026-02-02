@@ -61,6 +61,7 @@ export interface ProjectileState {
   generation?: number;
   state?: string; // flying, rolling, burrowing
   bounces?: number;
+  color?: string;
 }
 
 export interface ExplosionState {

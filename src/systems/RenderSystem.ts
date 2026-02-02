@@ -272,10 +272,12 @@ export class RenderSystem {
 
     private drawProjectile(proj: ProjectileState) {
         this.ctx.save();
+        const weaponId = proj.weaponType || 'missile';
+        const isLiquidDirt = weaponId === 'liquid_dirt_particle';
+        const isNapalm = weaponId === 'napalm_particle';
 
         // Trail
-        // Trail
-        if (proj.trail.length > 1) {
+        if (proj.trail.length > 1 && !isLiquidDirt && !isNapalm) {
             this.ctx.beginPath();
             this.ctx.moveTo(proj.trail[0].x, proj.trail[0].y);
             for (let i = 1; i < proj.trail.length; i++) {
@@ -297,13 +299,46 @@ export class RenderSystem {
         const angle = Math.atan2(proj.vy, proj.vx);
         this.ctx.rotate(angle);
 
-        const weaponId = proj.weaponType || 'missile';
-        const color = WEAPONS[weaponId]?.color || 'white';
+        let color = proj.color || WEAPONS[weaponId]?.color || 'white';
+        if (isLiquidDirt) {
+            color = WEAPONS['liquid_dirt']?.color || '#E6D2B5';
+        } else if (isNapalm) {
+            color = '#FF0000'; // Red liquid base
+        }
 
         this.ctx.fillStyle = color;
         this.ctx.beginPath();
-        this.ctx.arc(0, 0, 3, 0, Math.PI * 2);
+        // Smaller particle for liquid/napalm
+        const radius = (isLiquidDirt || isNapalm) ? 2 : 3;
+        this.ctx.arc(0, 0, radius, 0, Math.PI * 2);
         this.ctx.fill();
+
+        // Fire Effect for Napalm
+        if (isNapalm) {
+            this.ctx.globalAlpha = 0.8;
+            this.ctx.fillStyle = Math.random() > 0.5 ? '#FFA500' : '#FFFF00'; // Orange or Yellow
+            
+            // Draw a flame shape (triangle-ish)
+            // Since we rotated the context to align with velocity, "up" relative to screen depends on rotation.
+            // But we want fire to burn UP (against gravity) or maybe align with movement?
+            // Actually, usually fire burns UP.
+            // But context is rotated. We should unrotate or just draw relative to projectile.
+            // If we draw relative to projectile in rotated context, flame points "forward".
+            // Let's unrotate temporarily or just draw loosely.
+            // Actually, easier to just draw simple flicker circles.
+            
+            const flameSize = 2 + Math.random() * 3;
+            const flameOffset = 3 + Math.random() * 2;
+            
+            // We want flame to be "up" relative to the GROUND or SCREEN, not velocity.
+            // But we are rotated.
+            // Undo rotation for the flame?
+            this.ctx.rotate(-angle); // Undo rotation
+            
+            this.ctx.beginPath();
+            this.ctx.arc(0, -flameOffset, flameSize, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
 
         this.ctx.restore();
     }

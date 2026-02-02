@@ -13,6 +13,8 @@ import {
     ParticleBehavior,
     RollingBehavior,
     DiggingBehavior,
+    LiquidBehavior,
+    NapalmBehavior,
     type PhysicsContext
 } from './physics/WeaponBehavior';
 
@@ -26,6 +28,8 @@ export class PhysicsSystem {
     private particleBehavior: ParticleBehavior;
     private rollingBehavior: RollingBehavior;
     private diggingBehavior: DiggingBehavior;
+    private liquidBehavior: LiquidBehavior;
+    private napalmBehavior: NapalmBehavior;
 
     constructor(terrainSystem: TerrainSystem, soundManager: SoundManager) {
         this.terrainSystem = terrainSystem;
@@ -39,6 +43,8 @@ export class PhysicsSystem {
         this.particleBehavior = new ParticleBehavior();
         this.rollingBehavior = new RollingBehavior();
         this.diggingBehavior = new DiggingBehavior();
+        this.liquidBehavior = new LiquidBehavior();
+        this.napalmBehavior = new NapalmBehavior();
     }
 
     public setBorderStrategy(strategy: BorderStrategy) {
@@ -102,7 +108,8 @@ export class PhysicsSystem {
             // 4. Collision Check (Standard & Rolling)
             // Diggers handle their own collision in behavior
             // Particles handle their own collision/ground check in behavior
-            if (!shouldRemove && !this.isParticle(proj.weaponType) && !this.isDigger(proj.weaponType)) {
+            // Liquid/Napalm handles its own collision in behavior
+            if (!shouldRemove && !this.isParticle(proj.weaponType) && !this.isDigger(proj.weaponType) && proj.weaponType !== 'liquid_dirt_particle' && proj.weaponType !== 'napalm_particle') {
                 // Check Collision
                 if (this.checkCollision(state, proj)) {
                     // Special Handling for Rollers (Start Rolling)
@@ -165,13 +172,15 @@ export class PhysicsSystem {
 
     private getBehavior(proj: ProjectileState): WeaponBehavior {
         if (proj.state === 'rolling') return this.rollingBehavior;
+        if (proj.weaponType === 'liquid_dirt_particle') return this.liquidBehavior;
+        if (proj.weaponType === 'napalm_particle') return this.napalmBehavior;
         if (this.isParticle(proj.weaponType)) return this.particleBehavior;
         if (this.isDigger(proj.weaponType)) return this.diggingBehavior;
         return this.standardBehavior;
     }
 
     private isParticle(type: string): boolean {
-        return type === 'napalm_particle' || type === 'liquid_dirt_particle' || type === 'dirt_particle' || type === 'riot_particle';
+        return type === 'dirt_particle' || type === 'riot_particle';
     }
 
     private isDigger(type: string): boolean {
@@ -209,14 +218,12 @@ export class PhysicsSystem {
 
         // Border Strategy handles Out of Bounds (Bottom/Sides), but here we check for TERRAIN hit.
         // If y > SCREEN_HEIGHT, it's a hit (handled by BorderStrategy -> Destroy, but strictly speaking it's a "collision" with floor)
-        // We let BorderStrategy handle the removal of deep projectiles.
-        // But if we want an explosion on floor hit?
         if (y >= CONSTANTS.SCREEN_HEIGHT) return true;
 
         if (this.isDigger(proj.weaponType)) return false; // Diggers don't collide with terrain surface
 
-        const groundY = this.terrainSystem.getGroundY(x);
-        if (y >= groundY) return true;
+        // Check exact pixel solidity (allows tunnels)
+        if (this.terrainSystem.isSolid(x, y)) return true;
 
         // 2. Tank Collision
         for (const tank of state.tanks) {
@@ -247,18 +254,24 @@ export class PhysicsSystem {
         if (weaponStats.type === 'dirt_charge') {
             this.terrainSystem.addTerrain(state, x, y, radius);
         } else if (weaponStats.type === 'liquid_dirt') {
-            // Spawn Liquid Dirt Particles
+            // Spawn Liquid Dirt Particles - Splash / Ooze Effect
             if (newQueue) {
-                for (let i = 0; i < 15; i++) {
-                    const angle = Math.random() * 360;
-                    const speed = Math.random() * 50 + 20;
-                    const rad = (angle * Math.PI) / 180;
+                const count = 200;
+                for (let i = 0; i < count; i++) {
+                    // Random spread around impact
+                    const offsetX = (Math.random() - 0.5) * 80; // +/- 40px spread
+                    const startX = x + offsetX;
+                    
+                    // Initial velocity: mostly random spread ("splash")
+                    const vx = (Math.random() - 0.5) * 100; // +/- 50
+                    const vy = (Math.random() - 0.5) * 20; // +/- 10
+
                     newQueue.push({
                         id: crypto.randomUUID(),
-                        x: x,
-                        y: y - 5,
-                        vx: Math.cos(rad) * speed,
-                        vy: Math.sin(rad) * speed,
+                        x: startX,
+                        y: y - 2, // Slightly above ground
+                        vx: vx,
+                        vy: vy,
                         weaponType: 'liquid_dirt_particle',
                         ownerId: proj.ownerId,
                         elapsedTime: 0,
@@ -267,18 +280,23 @@ export class PhysicsSystem {
                 }
             }
         } else if (weaponStats.type === 'napalm' && newQueue) {
-            // Spawn Napalm Particles
-            for (let i = 0; i < 15; i++) {
-                const sprayAngle = Math.random() * 360;
-                const rad = (sprayAngle * Math.PI) / 180;
-                const speed = Math.random() * 100 + 50;
+            // Spawn Napalm Particles - Splash / Burning Flow
+            const count = 150; // High count for spread
+            for (let i = 0; i < count; i++) {
+                // Random spread around impact
+                const offsetX = (Math.random() - 0.5) * 80; 
+                const startX = x + offsetX;
+                
+                // Splash velocity
+                const vx = (Math.random() - 0.5) * 100;
+                const vy = (Math.random() - 0.5) * 20;
 
                 newQueue.push({
                     id: crypto.randomUUID(),
-                    x: x,
-                    y: y - 10,
-                    vx: Math.cos(rad) * speed,
-                    vy: Math.sin(rad) * speed,
+                    x: startX,
+                    y: y - 5,
+                    vx: vx,
+                    vy: vy,
                     weaponType: 'napalm_particle',
                     ownerId: proj.ownerId || -1,
                     elapsedTime: 0,
@@ -299,26 +317,41 @@ export class PhysicsSystem {
                 currentRadius: 0,
                 duration: 0.3,
                 elapsed: 0,
-                color: 'orange'
+                color: proj?.color || 'orange'
             });
             this.soundManager.playExplosion();
             return;
         } else if (weaponStats.type === 'dirt') {
-            // Dirt bomb - check if it hit a tank
+            // Dirt bomb - check if it hit a tank directly
             let dirtX = x;
             let dirtY = y;
 
+            // If we hit a tank, we want to add dirt ON the tank.
+            // But if the tank is already covered, x,y will be the impact on the dirt mound.
+            // We should use the impact point naturally, which adds more dirt.
+            // Only if we hit the TANK collider (collisionType check?) or close enough to tank center
+            // do we maybe want to center it.
+            // The previous logic snapped to tank center if < 20.
+            // This prevented "stacking" if the mound was already 20px radius.
+            // Let's REMOVE the snapping logic so it just adds dirt where it hits.
+            // This allows stacking mounds.
+            
+            // However, if we hit the tank directly (collision), we might want to ensure the tank is covered.
+            // Check if impact is inside a tank
             for (const tank of state.tanks) {
                 if (tank.health <= 0) continue;
                 const dx = x - tank.x;
                 const dy = y - (tank.y - 10);
                 const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist < 20) {
-                    dirtX = tank.x;
-                    dirtY = tank.y;
+                if (dist < 15) {
+                    // Direct hit on tank! Center it slightly?
+                    // Or just let it be. If we center it, it looks cleaner.
+                    // But if we want to pile up, maybe slight offset is good.
+                    // Let's stick to impact point for "more dirt" behavior.
                     break;
                 }
             }
+            
             this.terrainSystem.addTerrain(state, dirtX, dirtY, radius);
             
             // Add visual explosion for dirt
@@ -341,7 +374,13 @@ export class PhysicsSystem {
 
         // Funky Bomb Logic
         if (proj && proj.weaponType === 'funky_bomb' && newQueue) {
+            // Shuffle colors to ensure uniqueness
             const colors = ['red', 'green', 'blue', 'purple', 'yellow'];
+            for (let i = colors.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [colors[i], colors[j]] = [colors[j], colors[i]];
+            }
+            
             for (let i = 0; i < 5; i++) {
                 const angle = Math.random() * 180;
                 const power = 100 + Math.random() * 200;
@@ -358,7 +397,7 @@ export class PhysicsSystem {
                     ownerId: proj.ownerId || -1,
                     elapsedTime: 0,
                     trail: [],
-                    color: colors[Math.floor(Math.random() * colors.length)]
+                    color: colors[i] // Unique color from shuffled list
                 });
             }
         }
@@ -554,13 +593,16 @@ export class PhysicsSystem {
 
         // --- Particle Fire Logic ---
         if (weaponId === 'dirt_charge') {
-            const count = 20;
+            const count = 100; // Dense cone
             const particleType = 'dirt_particle';
 
             for (let i = 0; i < count; i++) {
-                const spread = (Math.random() - 0.5) * 40;
+                const spread = (Math.random() - 0.5) * 30; // 30 deg spread (+/- 15)
                 const newRad = ((angle + spread) * Math.PI) / 180;
-                const pSpeed = speed * (0.8 + Math.random() * 0.4);
+                // High drag simulation: start fast but slow down fast? 
+                // Or just start with varied speeds and let physics handle it.
+                // User wants max 100px.
+                const pSpeed = speed * (0.2 + Math.random() * 0.4); 
 
                 state.projectiles.push({
                     id: crypto.randomUUID(),
@@ -581,6 +623,23 @@ export class PhysicsSystem {
         // --- Standard Fire Logic ---
         const vx = Math.cos(rad) * speed;
         const vy = -Math.sin(rad) * speed;
+
+        // Check for muzzle obstruction
+        if (this.terrainSystem.isSolid(startX, startY)) {
+            // Muzzle is buried!
+            this.triggerExplosion(state, startX, startY, { weaponType: weaponId, ownerId: tank.id });
+
+            // Determine next phase based on what triggerExplosion did
+            if (state.explosions.length > 0) {
+                 state.phase = GamePhase.EXPLOSION;
+                 state.lastExplosionTime = performance.now();
+            } else {
+                 // If no visual explosion (e.g. instant terrain mod), go straight to settling
+                 state.phase = GamePhase.TERRAIN_SETTLING;
+                 state.terrainDirty = true; 
+            }
+            return;
+        }
 
         const projectile: ProjectileState = {
             id: crypto.randomUUID(),

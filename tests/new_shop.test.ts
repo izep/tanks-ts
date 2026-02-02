@@ -94,18 +94,18 @@ describe('ShopSystem', () => {
         const itemId = 'fuel_can';
         const initialFuel = 250;
         mockState.tanks[0].fuel = initialFuel;
-        mockState.tanks[0].credits = 5000;
+        mockState.tanks[0].credits = 15000;
 
         shopSystem.handleBuyWeapon(mockState, itemId);
 
-        expect(mockState.tanks[0].credits).toBe(5000 - WEAPONS[itemId].cost);
+        expect(mockState.tanks[0].credits).toBe(15000 - WEAPONS[itemId].cost);
         expect(mockState.tanks[0].fuel).toBeGreaterThan(initialFuel);
     });
 
     it('should handle item purchases (shield)', () => {
         const itemId = 'shield';
         mockState.tanks[0].accessories = {};
-        mockState.tanks[0].credits = 5000;
+        mockState.tanks[0].credits = 25000;
 
         shopSystem.handleBuyWeapon(mockState, itemId);
 

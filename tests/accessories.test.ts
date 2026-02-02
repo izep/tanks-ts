@@ -268,7 +268,7 @@ describe('Accessories System', () => {
 
         it('should restore fuel when buying fuel can', () => {
             tank.fuel = 50;
-            tank.credits = 5000;
+            tank.credits = 15000;
             const fuelCanCost = WEAPONS['fuel_can'].cost;
             const fuelRestore = WEAPONS['fuel_can'].effectValue || 250;
 
@@ -279,13 +279,14 @@ describe('Accessories System', () => {
             }
 
             expect(tank.fuel).toBe(300);
-            expect(tank.credits).toBe(3000);
+            expect(tank.credits).toBe(5000);
         });
     });
 
     describe('Item Purchase', () => {
         it('should purchase shield correctly', () => {
             tank.accessories['shield'] = 0;
+            tank.credits = 25000;
             const cost = WEAPONS['shield'].cost;
 
             if (tank.credits >= cost) {
@@ -294,7 +295,7 @@ describe('Accessories System', () => {
             }
 
             expect(tank.accessories['shield']).toBe(1);
-            expect(tank.credits).toBe(10000 - cost);
+            expect(tank.credits).toBe(25000 - cost);
         });
 
         it('should purchase parachute correctly', () => {

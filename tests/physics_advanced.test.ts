@@ -84,11 +84,9 @@ describe('PhysicsSystem Advanced', () => {
 
         physics.update(state, 0.1);
 
-        // Find children
-        const children = state.projectiles.filter(p => p.ownerId === 1 && p.id !== 'mirv-1');
-        expect(children.length).toBeGreaterThan(0);
-        expect(state.projectiles.find(p => p.id === 'mirv-1')).toBeDefined(); // MIRV stays but splits
-        expect(state.projectiles.find(p => p.id === 'mirv-1').splitDone).toBe(true);
+        // MIRV should have split into 5 missiles and parent removed
+        expect(state.projectiles.length).toBe(5);
+        expect(state.projectiles.every(p => p.weaponType === 'missile')).toBe(true);
     });
 
     it('should spawn Napalm particles on ground impact', () => {

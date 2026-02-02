@@ -25,43 +25,51 @@ export class StandardFlightBehavior implements WeaponBehavior {
 
         // MIRV and Death's Head Logic
         if (!projectile.splitDone && projectile.vy > 0) {
-            if (projectile.weaponType === 'mirv') {
-                projectile.splitDone = true;
-                const offsets = [-50, 50];
-                offsets.forEach(off => {
-                    context.addProjectile({
-                        id: generateId(),
-                        x: projectile.x,
-                        y: projectile.y,
-                        vx: projectile.vx + off,
-                        vy: projectile.vy,
-                        weaponType: 'mirv',
-                        ownerId: projectile.ownerId,
-                        elapsedTime: 0,
-                        trail: [],
-                        splitDone: true,
-                        generation: (projectile.generation || 0) + 1
+            // Check if about to hit terrain (don't split if close to ground)
+            const groundY = context.terrainSystem.getGroundY(Math.floor(projectile.x));
+            const clearance = groundY - projectile.y;
+            
+            // Only split if we have enough clearance (not about to hit ground)
+            if (clearance > 20) {
+                if (projectile.weaponType === 'mirv') {
+                    projectile.splitDone = true;
+                    // Deploy 5 missile warheads with even spread
+                    const offsets = [-100, -50, 0, 50, 100];
+                    offsets.forEach(off => {
+                        context.addProjectile({
+                            id: generateId(),
+                            x: projectile.x,
+                            y: projectile.y,
+                            vx: projectile.vx + off,
+                            vy: projectile.vy,
+                            weaponType: 'missile', // Each warhead is a missile
+                            ownerId: projectile.ownerId,
+                            elapsedTime: 0,
+                            trail: [],
+                            splitDone: true
+                        });
                     });
-                });
-            } else if (projectile.weaponType === 'death_head') {
-                projectile.splitDone = true;
-                const numFragments = 5;
-                for (let i = 0; i < numFragments; i++) {
-                    const spread = -100 + (i * 50);
-                    context.addProjectile({
-                        id: generateId(),
-                        x: projectile.x,
-                        y: projectile.y,
-                        vx: projectile.vx + spread,
-                        vy: projectile.vy,
-                        weaponType: 'baby_nuke',
-                        ownerId: projectile.ownerId,
-                        elapsedTime: 0,
-                        trail: [],
-                        splitDone: true
-                    });
+                    return true; // Remove parent MIRV
+                } else if (projectile.weaponType === 'death_head') {
+                    projectile.splitDone = true;
+                    const numFragments = 5;
+                    for (let i = 0; i < numFragments; i++) {
+                        const spread = -100 + (i * 50);
+                        context.addProjectile({
+                            id: generateId(),
+                            x: projectile.x,
+                            y: projectile.y,
+                            vx: projectile.vx + spread,
+                            vy: projectile.vy,
+                            weaponType: 'baby_nuke',
+                            ownerId: projectile.ownerId,
+                            elapsedTime: 0,
+                            trail: [],
+                            splitDone: true
+                        });
+                    }
+                    return true; // Remove parent
                 }
-                return true; // Remove parent
             }
         }
 

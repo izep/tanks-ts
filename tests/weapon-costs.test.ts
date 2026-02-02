@@ -34,6 +34,8 @@ describe('Weapon Costs', () => {
         expect(WEAPONS.earth_disrupter.cost).toBe(5000);
         expect(WEAPONS.plasma_blast.cost).toBe(9000);
         expect(WEAPONS.laser.cost).toBe(5000);
+        expect(WEAPONS.baby_roller.cost).toBe(5000);
+        expect(WEAPONS.roller.cost).toBe(6000);
         expect(WEAPONS.heavy_roller.cost).toBe(6750);
     });
 });

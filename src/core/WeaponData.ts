@@ -46,7 +46,8 @@ export const WEAPON_ORDER = [
     // Other
     'napalm',
     'hot_napalm',
-    'segway', // Roller placeholder
+    'baby_roller',
+    'roller',
     'heavy_roller',
     // Utility
     'tracer',
@@ -185,10 +186,20 @@ export const WEAPONS: Record<string, WeaponStats> = {
         description: 'Moves erratically.',
         bundleSize: 2
     },
-    'segway': {
-        name: 'Roller',
+    'baby_roller': {
+        name: 'Baby Roller',
         cost: 5000,
-        radius: 30,
+        radius: 10,
+        damage: 50,
+        color: '#00CCCC',
+        description: 'Small roller, bounces downhill.',
+        type: 'roller',
+        bundleSize: 10
+    },
+    'roller': {
+        name: 'Roller',
+        cost: 6000,
+        radius: 20,
         damage: 100,
         color: '#00FFFF',
         description: 'Rolls along the ground.',
@@ -337,7 +348,7 @@ export const WEAPONS: Record<string, WeaponStats> = {
     'heavy_roller': {
         name: 'Heavy Roller',
         cost: 6750,
-        radius: 50,
+        radius: 45,
         damage: 200,
         color: '#008888',
         description: 'A bigger, heavier roller.',

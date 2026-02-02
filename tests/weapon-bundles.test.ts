@@ -115,6 +115,8 @@ describe('Weapon Bundle System', () => {
             { weapon: 'nuke', expected: 1 },
             { weapon: 'mirv', expected: 3 },
             { weapon: 'napalm', expected: 10 },
+            { weapon: 'baby_roller', expected: 10 },
+            { weapon: 'roller', expected: 5 },
             { weapon: 'heavy_roller', expected: 2 }
         ];
 

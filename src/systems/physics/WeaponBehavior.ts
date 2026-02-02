@@ -468,6 +468,16 @@ export class RollingBehavior implements WeaponBehavior {
             const tdy = proj.y - (tank.y - 10);
             const dist = Math.sqrt(tdx * tdx + tdy * tdy);
             if (dist < 20) {
+                // If tank has active shield, bounce off
+                if (tank.activeShield && tank.shieldHealth && tank.shieldHealth > 0) {
+                    // Bounce: reverse horizontal velocity
+                    proj.vx = -proj.vx * 0.8;
+                    // Push away from tank
+                    const pushDist = 25;
+                    proj.x = tank.x + (tdx / dist) * pushDist;
+                    return false; // Continue rolling
+                }
+                // No shield: explode on contact
                 context.triggerExplosion(state, proj.x, proj.y, proj);
                 return true;
             }

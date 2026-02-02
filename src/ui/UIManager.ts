@@ -664,7 +664,7 @@ export class UIManager {
 
         if (id === 'death_head') filename = 'deaths_head.svg';
         else if (id === 'dirt_clod') filename = 'dirt_ball.svg';
-        else if (id === 'segway') filename = 'roller.svg';
+        else if (id === 'baby_roller' || id === 'roller' || id === 'heavy_roller') filename = 'roller.svg';
         else if (id === 'leapfrog') filename = 'leap_frog.svg';
         else if (id === 'shield') return new URL('../assets/misc/shield.svg', import.meta.url).href;
         else if (id === 'parachute') return new URL('../assets/misc/parachute.svg', import.meta.url).href;

@@ -1,4 +1,3 @@
-
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { PhysicsSystem } from '../src/systems/PhysicsSystem';
 import { TerrainSystem } from '../src/systems/TerrainSystem';
@@ -70,11 +69,11 @@ describe('Liquid Dirt', () => {
         expect(newQueue.length).toBe(200);
         const p = newQueue[0];
         expect(p.weaponType).toBe('liquid_dirt_particle');
-        
+
         // Check for splash properties (horizontal spread, low vertical)
         // vx should be random but likely non-zero
-        expect(p.vx).not.toBe(0); 
+        expect(p.vx).not.toBe(0);
         // vy should be small/negative (flat splash)
-        expect(Math.abs(p.vy)).toBeLessThan(50); 
+        expect(Math.abs(p.vy)).toBeLessThan(50);
     });
 });

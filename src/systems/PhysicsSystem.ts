@@ -18,6 +18,10 @@ import {
     type PhysicsContext
 } from './physics/WeaponBehavior';
 
+// Simple, fast ID generator for particles and projectiles
+let nextId = 0;
+const generateId = () => (nextId++).toString();
+
 export class PhysicsSystem {
     private terrainSystem: TerrainSystem;
     private soundManager: SoundManager;
@@ -280,7 +284,7 @@ export class PhysicsSystem {
                     const vy = (Math.random() - 0.5) * 20; // +/- 10
 
                     newQueue.push({
-                        id: crypto.randomUUID(),
+                        id: generateId(),
                         x: startX,
                         y: y - 2, // Slightly above ground
                         vx: vx,
@@ -305,7 +309,7 @@ export class PhysicsSystem {
                 const vy = (Math.random() - 0.5) * 20;
 
                 newQueue.push({
-                    id: crypto.randomUUID(),
+                    id: generateId(),
                     x: startX,
                     y: y - 5,
                     vx: vx,
@@ -401,7 +405,7 @@ export class PhysicsSystem {
                 const speed = power * 0.5;
 
                 newQueue.push({
-                    id: crypto.randomUUID(),
+                    id: generateId(),
                     x: x,
                     y: y - 20,
                     vx: Math.cos(rad) * speed,
@@ -612,13 +616,13 @@ export class PhysicsSystem {
             for (let i = 0; i < count; i++) {
                 const spread = (Math.random() - 0.5) * 30; // 30 deg spread (+/- 15)
                 const newRad = ((angle + spread) * Math.PI) / 180;
-                // High drag simulation: start fast but slow down fast? 
+                // High drag simulation: start fast but slow down fast?
                 // Or just start with varied speeds and let physics handle it.
                 // User wants max 100px.
-                const pSpeed = speed * (0.2 + Math.random() * 0.4); 
+                const pSpeed = speed * (0.2 + Math.random() * 0.4);
 
                 state.projectiles.push({
-                    id: crypto.randomUUID(),
+                    id: generateId(),
                     x: startX,
                     y: startY,
                     vx: Math.cos(newRad) * pSpeed,
@@ -649,13 +653,13 @@ export class PhysicsSystem {
             } else {
                  // If no visual explosion (e.g. instant terrain mod), go straight to settling
                  state.phase = GamePhase.TERRAIN_SETTLING;
-                 state.terrainDirty = true; 
+                 state.terrainDirty = true;
             }
             return;
         }
 
         const projectile: ProjectileState = {
-            id: crypto.randomUUID(),
+            id: generateId(),
             x: startX,
             y: startY,
             vx: vx,
@@ -676,7 +680,7 @@ export class PhysicsSystem {
                 const newVy = -Math.sin(newRad) * speed;
 
                 state.projectiles.push({
-                    id: crypto.randomUUID(),
+                    id: generateId(),
                     x: startX,
                     y: startY,
                     vx: newVx,
@@ -692,4 +696,3 @@ export class PhysicsSystem {
         state.phase = GamePhase.PROJECTILE_FLYING;
     }
 }
-

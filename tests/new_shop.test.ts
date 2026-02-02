@@ -13,6 +13,8 @@ class MockSoundManager extends SoundManager {
     playUI() { }
     playFire() { }
     playExplosion() { }
+    playHit() { }
+    playSizzle() { }
 }
 
 // Mock window for SoundManager and others

@@ -34,6 +34,7 @@ class MockSoundManager extends SoundManager {
     }
     playExplosion() { }
     playHit() { }
+    playSizzle() { }
 }
 
 global.HTMLCanvasElement = MockCanvas as any;
@@ -63,6 +64,9 @@ describe('PhysicsSystem', () => {
         soundManager = new MockSoundManager();
         // Spy on getGroundY to control terrain height for the test
         vi.spyOn(terrain, 'getGroundY').mockReturnValue(550);
+        vi.spyOn(terrain, 'isSolid').mockImplementation((x, y) => {
+            return y >= 550;
+        });
         physics = new PhysicsSystem(terrain, soundManager);
 
         mockState = {

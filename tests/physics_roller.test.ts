@@ -15,6 +15,7 @@ vi.mock('../src/systems/TerrainSystem', () => {
             generate(state: any) { }
             // Slope: y = x (45 degrees down)
             getGroundY(x: number) { return x; }
+            isSolid(x: number, y: number) { return y >= x; }
             getNormal(x: number) {
                 // Normal to y=x line (vector -1, 1 normalized?? No.)
                 // Derivative y' = 1.
@@ -41,6 +42,7 @@ class MockSoundManager extends SoundManager {
     }
     playExplosion() { }
     playHit() { }
+    playSizzle() { }
 }
 
 global.window = {

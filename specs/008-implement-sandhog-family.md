@@ -14,9 +14,9 @@ Sandhog weapons (Baby Sandhog, Sandhog, Heavy Sandhog) not implemented. These we
 
 Implement Sandhog family per Requirements.md:
 
-1. **Baby Sandhog:** 3 warheads, short tunnels ($3,000)
-2. **Sandhog:** 5 warheads, medium tunnels ($5,000)
-3. **Heavy Sandhog:** 7 warheads, long tunnels ($10,000)
+1. **Baby Sandhog:** 3 warheads, short tunnels ($10,000)
+2. **Sandhog:** 5 warheads, medium tunnels ($16,750)
+3. **Heavy Sandhog:** 7 warheads, long tunnels ($25,000)
 
 **Behavior:**
 - Deploy multiple warheads on impact
@@ -74,4 +74,4 @@ function updateSandhog(warhead: SandhogWarhead) {
 
 **Output when complete:** `<promise>DONE</promise>`
 
-<!-- NR_OF_TRIES: 1 -->
+<!-- NR_OF_TRIES: 2 -->

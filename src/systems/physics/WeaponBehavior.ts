@@ -77,21 +77,177 @@ export class StandardFlightBehavior implements WeaponBehavior {
     }
 }
 
-export class ParticleBehavior implements WeaponBehavior {
+export class LiquidBehavior implements WeaponBehavior {
     update(proj: ProjectileState, state: GameState, dt: number, context: PhysicsContext): boolean {
-        const weaponId = proj.weaponType;
+        // 1. Gravity (Always pull down)
+        proj.vy += state.gravity * dt * 10;
 
-        // Gravity
-        proj.vy += state.gravity * dt * 5;
+        // 2. Predict next position
+        let nextX = proj.x + proj.vx * dt;
+        let nextY = proj.y + proj.vy * dt;
 
-        // Movement
-        proj.x += proj.vx * dt;
-        proj.y += proj.vy * dt;
+        // 3. Ground Interaction
+        const groundY = context.terrainSystem.getGroundY(Math.floor(nextX));
 
-        // Ground Check
-        const groundY = context.terrainSystem.getGroundY(Math.floor(proj.x));
+        if (nextY >= groundY) {
+            // Snap to surface
+            nextY = groundY;
+            proj.vy = 0; // Kill vertical momentum
+            proj.y = nextY;
+            proj.x = nextX;
 
-        // Tank Collision Logic (for Napalm/Dirt)
+            // 4. Flow Logic (The "Ooze")
+            // Sample slope
+            const lookAhead = 4;
+            const yLeft = context.terrainSystem.getGroundY(Math.floor(proj.x - lookAhead));
+            const yRight = context.terrainSystem.getGroundY(Math.floor(proj.x + lookAhead));
+            const slope = yRight - yLeft; // Positive if Right is deeper (downhill to right)
+
+            // Acceleration downhill
+            const flowSpeed = 50;
+            proj.vx += slope * flowSpeed * dt;
+
+            // Friction / Viscosity
+            // If moving UPHILL (vx > 0 and slope < 0 OR vx < 0 and slope > 0), apply harsh friction
+            const movingUphill = (proj.vx > 0 && slope < -2) || (proj.vx < 0 && slope > 2);
+
+            if (movingUphill) {
+                proj.vx *= 0.8; // Reduced drag uphill to allow sloshing
+            } else {
+                proj.vx *= 0.95; // Low friction downhill (slippery)
+            }
+
+            // Local Peak Avoidance (Anti-Column)
+            // If moving slowly, check if we are on a peak
+            if (Math.abs(proj.vx) < 30) {
+                const range = 5;
+                const hLeft = context.terrainSystem.getGroundY(Math.floor(proj.x - range));
+                const hRight = context.terrainSystem.getGroundY(Math.floor(proj.x + range));
+                const myH = groundY;
+
+                // If neighbors are deeper (larger Y) than me, I am on a peak/bump.
+                // Push me towards the deeper side.
+                if (hLeft > myH + 2) {
+                    proj.vx -= 200 * dt; // Push Left
+                } else if (hRight > myH + 2) {
+                    proj.vx += 200 * dt; // Push Right
+                }
+            }
+
+            // 5. Settling (Freezing)
+            // Strict settling: must be very slow and very flat
+            if (Math.abs(proj.vx) < 5 && Math.abs(slope) < 2) {
+                // Turn into dirt
+                context.terrainSystem.addTerrain(state, proj.x, proj.y, 2, WEAPONS['liquid_dirt']?.color || '#E6D2B5');
+                return true; // Remove particle
+            }
+
+            // 6. Spread / Diffusion (prevent stacking in one pixel)
+            // Jitter to avoid stacking
+            if (Math.abs(proj.vx) < 10) {
+                 proj.vx += (Math.random() - 0.5) * 50;
+            }
+
+        } else {
+            // In air
+            proj.x = nextX;
+            proj.y = nextY;
+        }
+
+        // 7. Life & Out of Bounds
+        proj.elapsedTime += dt;
+        if (proj.elapsedTime > 2.5) { // Max life 2.5s (Reduced from 5.0)
+             // Force settle
+             context.terrainSystem.addTerrain(state, proj.x, proj.y, 2, WEAPONS['liquid_dirt']?.color || '#E6D2B5');
+             return true;
+        }
+
+        // Horizontal bounds
+        if (proj.x < 0 || proj.x > CONSTANTS.SCREEN_WIDTH) {
+            return true;
+        }
+
+        return false;
+    }
+}
+
+export class NapalmBehavior implements WeaponBehavior {
+    update(proj: ProjectileState, state: GameState, dt: number, context: PhysicsContext): boolean {
+        // 1. Gravity
+        proj.vy += state.gravity * dt * 10;
+
+        // 2. Predict next position
+        let nextX = proj.x + proj.vx * dt;
+        let nextY = proj.y + proj.vy * dt;
+
+        // 3. Ground Interaction
+        const groundY = context.terrainSystem.getGroundY(Math.floor(nextX));
+
+        if (nextY >= groundY) {
+            // Snap to surface
+            nextY = groundY;
+            proj.vy = 0;
+            proj.y = nextY;
+            proj.x = nextX;
+
+            // 4. Flow Logic (The "Ooze")
+            const lookAhead = 4;
+            const yLeft = context.terrainSystem.getGroundY(Math.floor(proj.x - lookAhead));
+            const yRight = context.terrainSystem.getGroundY(Math.floor(proj.x + lookAhead));
+            const slope = yRight - yLeft;
+
+            // Acceleration downhill
+            const flowSpeed = 50;
+            proj.vx += slope * flowSpeed * dt;
+
+            // Friction
+            const movingUphill = (proj.vx > 0 && slope < -2) || (proj.vx < 0 && slope > 2);
+            if (movingUphill) {
+                proj.vx *= 0.8;
+            } else {
+                proj.vx *= 0.95;
+            }
+
+            // Local Peak Avoidance
+            if (Math.abs(proj.vx) < 30) {
+                const range = 5;
+                const hLeft = context.terrainSystem.getGroundY(Math.floor(proj.x - range));
+                const hRight = context.terrainSystem.getGroundY(Math.floor(proj.x + range));
+                const myH = groundY;
+                if (hLeft > myH + 2) proj.vx -= 200 * dt;
+                else if (hRight > myH + 2) proj.vx += 200 * dt;
+            }
+
+            // Burning Effect (Discolor ground while flowing/sitting)
+            if (Math.random() < 0.3) { // More frequent burning
+                context.terrainSystem.burnTerrain(state, proj.x, proj.y, 8);
+                if (Math.random() < 0.01) {
+                    context.soundManager.playSizzle();
+                }
+            }
+
+            // Minimal actual terrain removal (Very small pitting)
+            if (Math.random() < 0.02) {
+                context.terrainSystem.explode(state, proj.x, proj.y, 2);
+            }
+
+            // Settling (Burn out)
+            if (Math.abs(proj.vx) < 5 && Math.abs(slope) < 2) {
+                return true; // Just disappear (burned out)
+            }
+
+            // Jitter
+            if (Math.abs(proj.vx) < 10) {
+                 proj.vx += (Math.random() - 0.5) * 50;
+            }
+
+        } else {
+            // In air
+            proj.x = nextX;
+            proj.y = nextY;
+        }
+
+        // Tank Collision (Burn tanks)
         for (const tank of state.tanks) {
             if (tank.health <= 0) continue;
             const dx = proj.x - tank.x;
@@ -99,13 +255,70 @@ export class ParticleBehavior implements WeaponBehavior {
             const dist = Math.sqrt(dx * dx + dy * dy);
 
             if (dist < 15) {
-                if (weaponId === 'napalm_particle') {
-                        // Damage tank
-                        tank.health -= 0.5; // DoT per particle
-                        if (tank.health <= 0) tank.isDead = true;
-                } else if (weaponId === 'dirt_particle' || weaponId === 'liquid_dirt_particle') {
-                    // Hit tank -> Become dirt at tank position
-                    context.terrainSystem.addTerrain(state, tank.x, tank.y, 6, WEAPONS['liquid_dirt']?.color);
+                tank.health -= 0.5; // Burn damage
+                if (tank.health <= 0) tank.isDead = true;
+                // Don't stop, flow through/over tank
+            }
+        }
+
+        // 7. Life & Out of Bounds
+        proj.elapsedTime += dt;
+        if (proj.elapsedTime > 2.5) {
+             return true; // Burned out
+        }
+
+        if (proj.x < 0 || proj.x > CONSTANTS.SCREEN_WIDTH) {
+            return true;
+        }
+
+        return false;
+    }
+}
+
+export class ParticleBehavior implements WeaponBehavior {
+    update(proj: ProjectileState, state: GameState, dt: number, context: PhysicsContext): boolean {
+        const weaponId = proj.weaponType;
+
+        // Gravity
+        proj.vy += state.gravity * dt * 5;
+
+        // Drag for dirt charge to limit range
+        if (weaponId === 'dirt_particle') {
+            proj.vx *= 0.9; // Strong air resistance
+            proj.vy *= 0.9;
+        }
+
+        // Movement
+        const nextX = proj.x + proj.vx * dt;
+        const nextY = proj.y + proj.vy * dt;
+
+        // Check if we hit solid ground
+        // We check if the destination pixel is solid
+        if (context.terrainSystem.isSolid(nextX, nextY)) {
+             // Hit ground!
+             if (weaponId === 'dirt_particle') {
+                 context.terrainSystem.addTerrain(state, proj.x, proj.y, 4, WEAPONS['dirt_charge']?.color);
+                 return true;
+             }
+        }
+
+        proj.x = nextX;
+        proj.y = nextY;
+
+        // Ground Check
+        const groundY = context.terrainSystem.getGroundY(Math.floor(proj.x));
+
+        // Tank Collision Logic
+        for (const tank of state.tanks) {
+            if (tank.health <= 0) continue;
+            const dx = proj.x - tank.x;
+            const dy = proj.y - (tank.y - 10);
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist < 15) {
+                if (weaponId === 'dirt_particle') {
+                    const color = WEAPONS['dirt_charge']?.color;
+                    context.terrainSystem.addTerrain(state, tank.x, tank.y, 4, color);
                     return true;
                 }
             }
@@ -114,7 +327,7 @@ export class ParticleBehavior implements WeaponBehavior {
         if (proj.y >= groundY) {
             proj.y = groundY;
 
-            // Simple "Ooze" / Rolling physics for particles
+            // Sliding physics
             const groundYNext = context.terrainSystem.getGroundY(Math.floor(proj.x + (proj.vx > 0 ? 5 : -5)));
             const slope = groundYNext - groundY;
 
@@ -124,30 +337,23 @@ export class ParticleBehavior implements WeaponBehavior {
                 proj.vx *= 0.9; // Friction
             }
 
-            // Napalm Burns terrain
-            if (weaponId === 'napalm_particle') {
-                // Burn chance/effect
-                if (Math.random() < 0.1) {
-                    context.terrainSystem.explode(state, proj.x, proj.y, 5);
-                }
-            }
-
             // Stop condition
             if (Math.abs(proj.vx) < 5) {
-                if (weaponId === 'liquid_dirt_particle' || weaponId === 'dirt_particle') {
-                    const color = weaponId === 'liquid_dirt_particle' ? WEAPONS['liquid_dirt']?.color : undefined;
-                    context.terrainSystem.addTerrain(state, proj.x, proj.y, 6, color);
+                if (weaponId === 'dirt_particle') {
+                    const color = WEAPONS['dirt_charge']?.color;
+                    context.terrainSystem.addTerrain(state, proj.x, proj.y, 4, color);
                     return true;
-                } else if (weaponId === 'napalm_particle') {
-                    // Napalm dies out eventually (handled by elapsedTime below) or stops and burns a bit more
                 }
             }
         }
 
         proj.elapsedTime += dt;
-        if (proj.elapsedTime > 2.0) { // Lifetime
-            if (weaponId === 'napalm_particle') {
-                    context.terrainSystem.explode(state, proj.x, proj.y, 8); // Final poof
+        // Short life for dirt charge to ensure it settles as a cone
+        const maxLife = weaponId === 'dirt_particle' ? 0.5 : 2.0;
+
+        if (proj.elapsedTime > maxLife) {
+            if (weaponId === 'dirt_particle') {
+                 context.terrainSystem.addTerrain(state, proj.x, proj.y, 4, WEAPONS['dirt_charge']?.color);
             }
             return true;
         }

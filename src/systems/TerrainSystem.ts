@@ -367,33 +367,43 @@ export class TerrainSystem {
         gameState.terrainDirty = true;
     }
 
+    public burnTerrain(gameState: GameState, x: number, y: number, radius: number) {
+        this.ctx.save();
+        // 'source-atop' draws ONLY where the canvas already has pixels.
+        this.ctx.globalCompositeOperation = 'source-atop';
+        this.ctx.fillStyle = 'rgba(20, 20, 20, 0.6)'; // Very dark, semi-transparent for layering
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, radius, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.restore();
+
+        // We don't mark terrainDirty or update mask because the shape didn't change, just color.
+        // However, we might want to flag for a frame update if we used a separate layer,
+        // but here we draw directly to the terrain canvas.
+    }
+
     public addTerrain(gameState: GameState, x: number, y: number, radius: number, color?: string) {
-        // Clamp coordinates to prevent drawing outside canvas (fixes freeze when off-screen)
-        const clampedX = Math.max(0, Math.min(this.width - 1, x));
-        const clampedY = Math.max(0, Math.min(this.height - 1, y));
-        const clampedRadius = Math.min(radius, Math.min(clampedX, this.width - clampedX, clampedY, this.height - clampedY));
+        // Clamp coordinates for the center point logic if needed, but we should just draw at x,y
+        // The previous logic aggressively shrank the radius which was wrong.
 
-        // Only add if radius is valid
-        if (clampedRadius <= 0) return;
-
-        // 1. Visual Update (draw on base terrain canvas for settling)
+        // 1. Visual Update
         this.ctx.globalCompositeOperation = 'source-over';
         this.ctx.fillStyle = color || this.COLOR_DIRT;
         this.ctx.beginPath();
-        this.ctx.arc(clampedX, clampedY, clampedRadius, 0, Math.PI * 2);
+        this.ctx.arc(x, y, radius, 0, Math.PI * 2);
         this.ctx.fill();
 
-        // 2. Mask Update (use clamped values)
-        const r2 = clampedRadius * clampedRadius;
-        const minX = Math.max(0, Math.floor(clampedX - clampedRadius));
-        const maxX = Math.min(this.width - 1, Math.ceil(clampedX + clampedRadius));
-        const minY = Math.max(0, Math.floor(clampedY - clampedRadius));
-        const maxY = Math.min(this.height - 1, Math.ceil(clampedY + clampedRadius));
+        // 2. Mask Update
+        const r2 = radius * radius;
+        const minX = Math.max(0, Math.floor(x - radius));
+        const maxX = Math.min(this.width - 1, Math.ceil(x + radius));
+        const minY = Math.max(0, Math.floor(y - radius));
+        const maxY = Math.min(this.height - 1, Math.ceil(y + radius));
 
         for (let py = minY; py <= maxY; py++) {
             for (let px = minX; px <= maxX; px++) {
-                const dx = px - clampedX;
-                const dy = py - clampedY;
+                const dx = px - x;
+                const dy = py - y;
                 if (dx * dx + dy * dy <= r2) {
                     this.terrainMask[py * this.width + px] = 1;
                 }

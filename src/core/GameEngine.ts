@@ -83,7 +83,13 @@ export class GameEngine {
 
         // UI Bindings
         this.uiManager.onBuyWeapon = (weaponId) => this.shopSystem.handleBuyWeapon(this.state, weaponId);
-        this.uiManager.onNextRound = async () => await this.gameFlowSystem.handleNextRound(this.state);
+        this.uiManager.onNextRound = async () => {
+            if (this.shopSystem.tryNextShopTurn(this.state)) {
+                this.soundManager.playUI();
+            } else {
+                await this.gameFlowSystem.handleNextRound(this.state);
+            }
+        };
         this.uiManager.onStartGame = async (config) => {
             await this.gameSetupSystem.handleStartGame(this.state, config);
             
@@ -193,6 +199,7 @@ export class GameEngine {
                             console.log("Round Over - Going to Shop");
                             this.state.phase = GamePhase.SHOP;
                             this.handleAiShopping();
+                            this.shopSystem.initShopTurn(this.state);
                         }
                     } else {
                         this.physicsSystem.nextTurn(this.state);

@@ -12,6 +12,7 @@ vi.mock('../src/systems/TerrainSystem', () => {
             constructor(public width: number, public height: number) { }
             generate(state: any) { }
             getGroundY(x: number) { return 500; }
+            isSolid(x: number, y: number) { return y >= 500; }
             explode(state: any, x: number, y: number, r: number) { console.log('MockExplode called at', x, y); }
             addTerrain(state: any, x: number, y: number, r: number) { }
             settle(state: any) { return false; }
@@ -27,6 +28,7 @@ class MockSoundManager extends SoundManager {
     }
     playExplosion() { }
     playHit() { }
+    playSizzle() { }
 }
 
 global.window = {

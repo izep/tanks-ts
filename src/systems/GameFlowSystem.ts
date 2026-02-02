@@ -19,46 +19,12 @@ export class GameFlowSystem {
     }
 
     public update(state: GameState) {
-        // Terrain Settling
-        if (state.phase === GamePhase.TERRAIN_SETTLING || state.terrainDirty) {
-            try {
-                const moved = this.terrainSystem.settle(state);
-                if (!moved && state.phase === GamePhase.TERRAIN_SETTLING) {
-                    // Settling done
-                    console.log('Settling done, calling nextTurn');
-
-                    // Check Win Condition before next turn
-                    const alive = state.tanks.filter((t) => !t.isDead && t.health > 0);
-                    if (alive.length <= 1) {
-                        // Round Over
-                        if (alive.length === 1) {
-                            const winner = alive[0];
-                            winner.credits += 1000; // Win bonus
-                            console.log(`Round Winner: ${winner.name}`);
-                        }
-
-                        if (state.roundNumber >= state.maxRounds) {
-                            console.log('Game Over - Max rounds reached');
-                            state.phase = GamePhase.GAME_OVER;
-                            this.soundManager.playUI();
-                        } else {
-                            console.log('Round Over - Going to Shop');
-                            state.phase = GamePhase.SHOP;
-                        }
-                    } else {
-                        this.physicsSystem.nextTurn(state);
-                    }
-                }
-            } catch (e) {
-                console.error('Terrain settling error:', e);
-                state.terrainDirty = false;
-            }
-        }
+        // Logic moved to GameEngine to avoid duplication and split split-brain issues.
+        // Eventually, GameEngine logic should be moved here, but for now we silence the duplicate execution.
     }
 
     public async handleNextRound(state: GameState) {
-        // Just start next round for now
-        // TODO: Logic for multiple players shopping
+        // Start next round
 
         if (state.roundNumber >= state.maxRounds) {
             console.log('Max rounds reached - Game Over');

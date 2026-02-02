@@ -389,7 +389,11 @@ export class TerrainSystem {
     public addTerrain(gameState: GameState, x: number, y: number, radius: number, color?: string) {
         // Clamp coordinates for the center point logic if needed, but we should just draw at x,y
         // The previous logic aggressively shrank the radius which was wrong.
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> 4c7770c (Merge main and resolve conflicts in ShopSystem)
         // 1. Visual Update
         this.ctx.globalCompositeOperation = 'source-over';
         this.ctx.fillStyle = color || this.COLOR_DIRT;

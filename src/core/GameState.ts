@@ -1,4 +1,5 @@
 import type { AIController, AIPersonality } from './AIController';
+import type { MarketState } from '../systems/EconomySystem';
 
 export const GamePhase = {
   SETUP: 'SETUP',
@@ -103,6 +104,7 @@ export interface GameState {
   terrainDirty: boolean; // Flag to check settling
   lastExplosionTime: number;
   borderMode?: 'normal' | 'wrap' | 'bounce' | 'concrete';
+  marketState?: MarketState; // Economy system state
 }
 
 export const CONSTANTS = {

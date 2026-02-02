@@ -1,3 +1,5 @@
+## Status: COMPLETE
+
 # Spec 010: Implement Economy System
 
 **Priority:** High  
@@ -24,17 +26,17 @@ See TODO.md lines 54-115 for full implementation details.
 
 ## Acceptance Criteria
 
-- [ ] `EconomySystem.ts` created in `src/systems/`
-- [ ] `MarketState` interface with price tracking
-- [ ] `updatePrice()` increases price on purchase
-- [ ] `updatePrice()` decreases price on sale
-- [ ] Prices clamped to 50%-200% of base
-- [ ] Volatility setting affects price change rate
-- [ ] `applyMarketForces()` drifts prices toward base
-- [ ] Integration with ShopSystem
-- [ ] Tests verify price fluctuations
-- [ ] Tests verify bounds enforcement
-- [ ] Build succeeds
+- [x] `EconomySystem.ts` created in `src/systems/`
+- [x] `MarketState` interface with price tracking
+- [x] `updatePrice()` increases price on purchase
+- [x] `updatePrice()` decreases price on sale
+- [x] Prices clamped to 50%-200% of base
+- [x] Volatility setting affects price change rate
+- [x] `applyMarketForces()` drifts prices toward base
+- [x] Integration with ShopSystem
+- [x] Tests verify price fluctuations
+- [x] Tests verify bounds enforcement
+- [x] Build succeeds
 
 ## Verification
 
@@ -66,4 +68,4 @@ export class EconomySystem {
 
 **Output when complete:** `<promise>DONE</promise>`
 
-<!-- NR_OF_TRIES: 0 -->
+<!-- NR_OF_TRIES: 1 -->

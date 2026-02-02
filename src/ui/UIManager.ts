@@ -13,6 +13,7 @@ export class UIManager {
     public onStartGame: (config: any) => void = () => { };
     public onRestartGame: () => void = () => { };
     public onAction: (action: string, active: boolean) => void = () => { };
+    public getPrice: (weaponId: string) => number = (weaponId) => WEAPONS[weaponId]?.cost || 0;
 
     constructor() {
         this.container = document.getElementById('ui-layer')!;
@@ -344,6 +345,7 @@ export class UIManager {
             }
 
             const weapon = WEAPONS[key];
+            const price = this.getPrice(key);
             const card = document.createElement('div');
             card.style.border = '1px solid #444';
             card.style.padding = '10px';
@@ -357,7 +359,7 @@ export class UIManager {
                 </div>
                 <div style="font-size: 12px; color: #aaa; margin-bottom: 5px;">${weapon.description}</div>
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="color: gold;">$${weapon.cost}${weapon.bundleSize > 1 ? ` (x${weapon.bundleSize})` : ''}</div>
+                    <div style="color: gold;">$${price}${weapon.bundleSize > 1 ? ` (x${weapon.bundleSize})` : ''}</div>
                     <div id="shop-count-${key}" style="color: white;">x0</div>
                 </div>
             `;

@@ -1,12 +1,15 @@
 import { type GameState } from '../core/GameState';
 import { SoundManager } from '../core/SoundManager';
 import { WEAPONS } from '../core/WeaponData';
+import { EconomySystem } from './EconomySystem';
 
 export class ShopSystem {
     private soundManager: SoundManager;
+    private economySystem: EconomySystem;
 
-    constructor(soundManager: SoundManager) {
+    constructor(soundManager: SoundManager, economySystem: EconomySystem) {
         this.soundManager = soundManager;
+        this.economySystem = economySystem;
     }
 
     public initShopTurn(state: GameState): boolean {
@@ -37,11 +40,13 @@ export class ShopSystem {
         if (!tank) return;
 
         const weapon = WEAPONS[weaponId];
+        const price = this.economySystem.getPrice(weaponId);
 
-        if (tank.credits >= weapon.cost) {
+        if (tank.credits >= price) {
             // Check for Items
             if (weapon.type === 'item') {
-                tank.credits -= weapon.cost;
+                tank.credits -= price;
+                this.economySystem.updatePrice(weaponId, true);
                 this.soundManager.playUI(); // Success sound
 
                 if (weaponId === 'fuel_can') {
@@ -72,8 +77,9 @@ export class ShopSystem {
 
             // Only purchase if we can add at least 1 item
             if (newCount > currentCount) {
-                tank.credits -= weapon.cost;
+                tank.credits -= price;
                 tank.inventory[weaponId] = newCount;
+                this.economySystem.updatePrice(weaponId, true);
                 this.soundManager.playUI(); // Success sound
             } else {
                 // Already at max (99)
@@ -110,5 +116,13 @@ export class ShopSystem {
             }
             this.soundManager.playUI();
         }
+    }
+
+    public applyMarketForces(): void {
+        this.economySystem.applyMarketForces();
+    }
+
+    public getEconomySystem(): EconomySystem {
+        return this.economySystem;
     }
 }

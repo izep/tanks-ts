@@ -3,6 +3,7 @@ import { ShopSystem } from '../src/systems/ShopSystem';
 import { SoundManager } from '../src/core/SoundManager';
 import { WEAPONS } from '../src/core/WeaponData';
 import { GameState, GamePhase } from '../src/core/GameState';
+import { EconomySystem } from '../src/systems/EconomySystem';
 
 class MockSoundManager extends SoundManager {
     constructor() {
@@ -33,7 +34,8 @@ describe('Weapon Bundle System', () => {
 
     beforeEach(() => {
         const soundManager = new MockSoundManager();
-        shopSystem = new ShopSystem(soundManager);
+        const economySystem = new EconomySystem('none');
+        shopSystem = new ShopSystem(soundManager, economySystem);
 
         mockState = {
             phase: 'SHOP' as GamePhase,

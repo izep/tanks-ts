@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { ShopSystem } from '../src/systems/ShopSystem';
 import { GameState, GamePhase } from '../src/core/GameState';
 import { SoundManager } from '../src/core/SoundManager';
+import { EconomySystem } from '../src/systems/EconomySystem';
 
 class MockSoundManager extends SoundManager {
     constructor() {
@@ -29,7 +30,8 @@ describe('Multiplayer Shop Logic', () => {
 
     beforeEach(() => {
         mockSoundManager = new MockSoundManager();
-        shopSystem = new ShopSystem(mockSoundManager);
+        const economySystem = new EconomySystem('none');
+        shopSystem = new ShopSystem(mockSoundManager, economySystem);
 
         // Setup state with mixed players
         mockState = {

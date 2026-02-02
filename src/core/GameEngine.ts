@@ -10,6 +10,7 @@ import { PlayerInputSystem } from '../systems/PlayerInputSystem';
 import { AISystem } from '../systems/AISystem';
 import { ShopSystem } from '../systems/ShopSystem';
 import { GameFlowSystem } from '../systems/GameFlowSystem';
+import { EconomySystem } from '../systems/EconomySystem';
 import { 
     DefaultBorderStrategy, 
     WrapBorderStrategy, 
@@ -35,6 +36,7 @@ export class GameEngine {
     public aiSystem: AISystem;
     public shopSystem: ShopSystem;
     public gameFlowSystem: GameFlowSystem;
+    public economySystem: EconomySystem;
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -75,7 +77,8 @@ export class GameEngine {
             this.soundManager
         );
         this.aiSystem = new AISystem(this.physicsSystem, this.soundManager, this.terrainSystem);
-        this.shopSystem = new ShopSystem(this.soundManager);
+        this.economySystem = new EconomySystem('low');
+        this.shopSystem = new ShopSystem(this.soundManager, this.economySystem);
         this.gameFlowSystem = new GameFlowSystem(this.terrainSystem, this.physicsSystem, this.soundManager);
 
         // Init Terrain - Moved to initialize()
@@ -83,6 +86,7 @@ export class GameEngine {
 
         // UI Bindings
         this.uiManager.onBuyWeapon = (weaponId) => this.shopSystem.handleBuyWeapon(this.state, weaponId);
+        this.uiManager.getPrice = (weaponId) => this.economySystem.getPrice(weaponId);
         this.uiManager.onNextRound = async () => {
             if (this.shopSystem.tryNextShopTurn(this.state)) {
                 this.soundManager.playUI();
@@ -203,6 +207,7 @@ export class GameEngine {
                         } else {
                             console.log("Round Over - Going to Shop");
                             this.state.phase = GamePhase.SHOP;
+                            this.shopSystem.applyMarketForces(); // Apply market drift
                             this.handleAiShopping();
                             this.shopSystem.initShopTurn(this.state);
                         }

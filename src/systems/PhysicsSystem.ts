@@ -128,11 +128,13 @@ export class PhysicsSystem {
             // Particles handle their own collision/ground check in behavior
             // Bouncers (Leapfrog) handle their own collision in behavior
             // Liquid/Napalm handles its own collision in behavior
+            // Rollers in rolling state handle their own collision in behavior
             if (!shouldRemove &&
                 !this.isParticle(proj.weaponType) &&
                 !this.isDigger(proj.weaponType) &&
                 !this.isSandhog(proj.weaponType) &&
                 !this.isBouncer(proj.weaponType) &&
+                proj.state !== 'rolling' &&
                 proj.weaponType !== 'liquid_dirt_particle' &&
                 proj.weaponType !== 'napalm_particle' &&
                 proj.weaponType !== 'sandhog_warhead' &&
@@ -141,7 +143,7 @@ export class PhysicsSystem {
                 // Check Collision
                 if (this.checkCollision(state, proj)) {
                     // Special Handling for Rollers (Start Rolling)
-                    if (this.isRoller(proj.weaponType) && proj.state !== 'rolling') {
+                    if (this.isRoller(proj.weaponType)) {
                         this.startRolling(proj);
                     } else {
                         shouldRemove = true;

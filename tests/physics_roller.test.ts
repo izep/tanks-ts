@@ -116,4 +116,72 @@ describe('PhysicsSystem Roller', () => {
         expect(roller.vx).toBeGreaterThan(0);
         expect(roller.x).toBeGreaterThan(100);
     });
+
+    it('Roller should stop and explode when velocity too low', () => {
+        const roller = {
+            id: 'r-2', x: 200, y: 200, vx: 3, vy: 0, // Low velocity
+            weaponType: 'roller', ownerId: 1, elapsedTime: 0, trail: []
+        };
+        state.projectiles.push(roller);
+
+        // Update physics - friction should slow it down
+        for (let i = 0; i < 20; i++) {
+            physics.update(state, 0.1);
+        }
+
+        // Should have exploded (removed from projectiles)
+        expect(state.projectiles.length).toBe(0);
+    });
+
+    it('Roller should explode on tank collision', () => {
+        // Add tank without shield
+        state.tanks.push({
+            id: 't-1', x: 250, y: 250, health: 100, maxHealth: 100,
+            fuel: 100, maxFuel: 100, money: 10000, angle: 45, power: 50,
+            color: '#00FF00', name: 'Test Tank', isAI: false,
+            inventory: new Map(), activeShield: false, shieldHealth: 0,
+            parachutes: 0, batteries: 0, deaths: 0, kills: 0
+        });
+
+        const roller = {
+            id: 'r-3', x: 200, y: 200, vx: 20, vy: 0,
+            weaponType: 'roller', ownerId: 2, elapsedTime: 0, trail: [], state: 'rolling'
+        };
+        state.projectiles.push(roller);
+
+        // Update multiple frames until collision or removal
+        let iterations = 0;
+        while (state.projectiles.length > 0 && iterations < 50) {
+            physics.update(state, 0.1);
+            iterations++;
+        }
+
+        // Projectile should be removed (exploded on tank)
+        expect(state.projectiles.length).toBe(0);
+    });
+
+    it('Roller should bounce off shielded tank', () => {
+        // Add tank WITH shield closer
+        state.tanks.push({
+            id: 't-2', x: 255, y: 255, health: 100, maxHealth: 100,
+            fuel: 100, maxFuel: 100, money: 10000, angle: 45, power: 50,
+            color: '#00FF00', name: 'Shielded Tank', isAI: false,
+            inventory: new Map(), activeShield: true, shieldHealth: 50,
+            parachutes: 0, batteries: 0, deaths: 0, kills: 0
+        });
+
+        const roller = {
+            id: 'r-4', x: 240, y: 240, vx: 50, vy: 0,
+            weaponType: 'roller', ownerId: 2, elapsedTime: 0, trail: [], state: 'rolling'
+        };
+        state.projectiles.push(roller);
+
+        // Update one frame - should hit shield and bounce
+        physics.update(state, 0.1);
+
+        // Projectile should still exist (bounced instead of exploding)
+        expect(state.projectiles.length).toBe(1);
+        // After bounce, velocity should be negative (reversed)
+        expect(roller.vx).toBeLessThan(0);
+    });
 });

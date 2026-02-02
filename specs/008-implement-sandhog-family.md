@@ -1,3 +1,5 @@
+## Status: COMPLETE
+
 # Spec 008: Implement Sandhog Family
 
 **Priority:** Medium  
@@ -25,15 +27,15 @@ Implement Sandhog family per Requirements.md:
 
 ## Acceptance Criteria
 
-- [ ] All 3 Sandhog types in `WeaponData.ts` with correct costs
-- [ ] Deploy correct number of warheads (3/5/7)
-- [ ] Warheads tunnel horizontally through terrain
-- [ ] Tunneling removes terrain pixels
-- [ ] Explosion at end of each tunnel
-- [ ] Baby: 30px tunnels, Sandhog: 50px, Heavy: 80px
-- [ ] Visual tunneling effect
-- [ ] Tests verify tunneling mechanics
-- [ ] Build succeeds
+- [x] All 3 Sandhog types in `WeaponData.ts` with correct costs
+- [x] Deploy correct number of warheads (3/5/7)
+- [x] Warheads tunnel horizontally through terrain
+- [x] Tunneling removes terrain pixels
+- [x] Explosion at end of each tunnel
+- [x] Baby: 30px tunnels, Sandhog: 50px, Heavy: 80px
+- [x] Visual tunneling effect
+- [x] Tests verify tunneling mechanics
+- [x] Build succeeds
 
 ## Verification
 
@@ -72,4 +74,4 @@ function updateSandhog(warhead: SandhogWarhead) {
 
 **Output when complete:** `<promise>DONE</promise>`
 
-<!-- NR_OF_TRIES: 0 -->
+<!-- NR_OF_TRIES: 1 -->

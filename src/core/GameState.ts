@@ -62,6 +62,12 @@ export interface ProjectileState {
   state?: string; // flying, rolling, burrowing
   bounces?: number;
   color?: string;
+  // Sandhog warhead properties
+  direction?: number; // 1 or -1 for horizontal direction
+  tunnelLength?: number;
+  distanceRemaining?: number;
+  blastRadius?: number;
+  damage?: number;
 }
 
 export interface ExplosionState {

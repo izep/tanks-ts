@@ -494,13 +494,7 @@ export class DiggingBehavior implements WeaponBehavior {
 
         // Add weaving noise
         const time = performance.now() / 100;
-        
-        // Sandhog vs Digger weave
-        if (proj.weaponType.includes('sandhog')) {
-             proj.vx += Math.cos(time) * 50 * dt; 
-        } else {
-             proj.vx += Math.sin(time) * 50 * dt;
-        }
+        proj.vx += Math.sin(time) * 50 * dt;
 
         proj.x += proj.vx * dt;
         proj.y += proj.vy * dt;
@@ -509,23 +503,166 @@ export class DiggingBehavior implements WeaponBehavior {
         const groundY = context.terrainSystem.getGroundY(Math.floor(proj.x));
         if (proj.y > groundY) {
             context.terrainSystem.explode(state, proj.x, proj.y, 10);
-            
-            // Sandhog deep explosion check
-             if (proj.weaponType.includes('sandhog') && proj.y >= CONSTANTS.SCREEN_HEIGHT - 10) {
-                 context.triggerExplosion(state, proj.x, proj.y, proj);
-                 return true;
-             }
         }
         
-        // Digger/Sandhog Collision Logic with Tanks (Explicit check needed as they ignore terrain)
+        // Digger Collision Logic with Tanks (Explicit check needed as they ignore terrain)
         for (const tank of state.tanks) {
             const dx = proj.x - tank.x;
             const dy = proj.y - (tank.y - 10);
             const dist = Math.sqrt(dx * dx + dy * dy);
             if (dist < 20) {
-                context.triggerExplosion(state, proj.x, proj.y, proj);
+                // Diggers fizzle on tank hit
                 return true;
             }
+        }
+
+        return false;
+    }
+}
+
+export class SandhogBehavior implements WeaponBehavior {
+    update(proj: ProjectileState, state: GameState, dt: number, context: PhysicsContext): boolean {
+        proj.vx += state.wind * dt * 0.1;
+        proj.vy += state.gravity * dt * 10;
+
+        // Add weaving noise
+        const time = performance.now() / 100;
+        proj.vx += Math.cos(time) * 50 * dt;
+
+        proj.x += proj.vx * dt;
+        proj.y += proj.vy * dt;
+
+        // Check for impact (ground or tank)
+        const groundY = context.terrainSystem.getGroundY(Math.floor(proj.x));
+        let shouldDeploy = false;
+
+        // Ground impact
+        if (proj.y >= groundY) {
+            shouldDeploy = true;
+        }
+
+        // Tank impact
+        for (const tank of state.tanks) {
+            if (tank.health <= 0) continue;
+            const dx = proj.x - tank.x;
+            const dy = proj.y - (tank.y - 10);
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 20) {
+                shouldDeploy = true;
+                break;
+            }
+        }
+
+        // Deploy warheads on impact
+        if (shouldDeploy) {
+            const weaponId = proj.weaponType;
+            let numWarheads = 3; // Baby Sandhog
+            let tunnelLength = 30; // Baby Sandhog
+            let blastRadius = 10; // Baby Sandhog
+
+            if (weaponId === 'sandhog') {
+                numWarheads = 5;
+                tunnelLength = 50;
+                blastRadius = 15;
+            } else if (weaponId === 'heavy_sandhog') {
+                numWarheads = 7;
+                tunnelLength = 80;
+                blastRadius = 20;
+            }
+
+            // Deploy warheads
+            const newQueue: any[] = [];
+            for (let i = 0; i < numWarheads; i++) {
+                // Spread warheads in different directions
+                const angle = -90 + (i / (numWarheads - 1)) * 180; // -90 to +90 degrees
+                const rad = (angle * Math.PI) / 180;
+                const direction = Math.cos(rad) > 0 ? 1 : -1;
+
+                newQueue.push({
+                    id: generateId(),
+                    x: proj.x,
+                    y: proj.y,
+                    vx: 0,
+                    vy: 0,
+                    weaponType: 'sandhog_warhead',
+                    ownerId: proj.ownerId,
+                    elapsedTime: 0,
+                    trail: [],
+                    direction: direction,
+                    tunnelLength: tunnelLength,
+                    distanceRemaining: tunnelLength,
+                    blastRadius: blastRadius,
+                    damage: WEAPONS[weaponId]?.damage || 50
+                });
+            }
+
+            // Add warheads to projectiles
+            if (newQueue.length > 0) {
+                newQueue.forEach(warhead => context.addProjectile(warhead));
+            }
+
+            return true; // Remove parent projectile
+        }
+
+        return false;
+    }
+}
+
+export class SandhogWarheadBehavior implements WeaponBehavior {
+    update(proj: ProjectileState, state: GameState, dt: number, context: PhysicsContext): boolean {
+        // Horizontal tunneling
+        const distanceRemaining = proj.distanceRemaining ?? 0;
+        const direction = proj.direction ?? 1;
+        const blastRadius = proj.blastRadius ?? 10;
+        const damage = proj.damage ?? 50;
+
+        if (distanceRemaining > 0) {
+            // Remove terrain as we tunnel
+            context.terrainSystem.explode(state, proj.x, proj.y, 3);
+            
+            // Move horizontally
+            const speed = 60; // pixels per second
+            proj.x += direction * speed * dt;
+            proj.distanceRemaining = distanceRemaining - speed * dt;
+        } else {
+            // Explode at end of tunnel
+            context.terrainSystem.explode(state, proj.x, proj.y, blastRadius);
+            
+            // Apply damage to nearby tanks
+            for (const tank of state.tanks) {
+                if (tank.health <= 0) continue;
+                const dx = proj.x - tank.x;
+                const dy = proj.y - (tank.y - 10);
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist < blastRadius + 10) {
+                    const dmg = damage * (1 - dist / (blastRadius + 10));
+                    tank.health -= dmg;
+                    if (tank.health <= 0) {
+                        tank.isDead = true;
+                    }
+                }
+            }
+
+            // Visual explosion
+            state.explosions.push({
+                id: Math.random(),
+                x: proj.x,
+                y: proj.y,
+                maxRadius: blastRadius,
+                currentRadius: 0,
+                duration: 0.3,
+                elapsed: 0,
+                color: '#DAA520'
+            });
+
+            context.soundManager.playExplosion();
+            return true; // Remove warhead
+        }
+
+        // Check if out of bounds
+        if (proj.x < 0 || proj.x > CONSTANTS.SCREEN_WIDTH) {
+            return true;
         }
 
         return false;

@@ -13,6 +13,8 @@ import {
     ParticleBehavior,
     RollingBehavior,
     DiggingBehavior,
+    SandhogBehavior,
+    SandhogWarheadBehavior,
     LeapfrogBehavior,
     LiquidBehavior,
     NapalmBehavior,
@@ -38,6 +40,8 @@ export class PhysicsSystem {
     private particleBehavior: ParticleBehavior;
     private rollingBehavior: RollingBehavior;
     private diggingBehavior: DiggingBehavior;
+    private sandhogBehavior: SandhogBehavior;
+    private sandhogWarheadBehavior: SandhogWarheadBehavior;
     private leapfrogBehavior: LeapfrogBehavior;
     private liquidBehavior: LiquidBehavior;
     private napalmBehavior: NapalmBehavior;
@@ -54,6 +58,8 @@ export class PhysicsSystem {
         this.particleBehavior = new ParticleBehavior();
         this.rollingBehavior = new RollingBehavior();
         this.diggingBehavior = new DiggingBehavior();
+        this.sandhogBehavior = new SandhogBehavior();
+        this.sandhogWarheadBehavior = new SandhogWarheadBehavior();
         this.leapfrogBehavior = new LeapfrogBehavior();
         this.liquidBehavior = new LiquidBehavior();
         this.napalmBehavior = new NapalmBehavior();
@@ -118,16 +124,18 @@ export class PhysicsSystem {
             }
 
             // 4. Collision Check (Standard & Rolling)
-            // Diggers handle their own collision in behavior
+            // Diggers, Sandhogs, and warheads handle their own collision in behavior
             // Particles handle their own collision/ground check in behavior
             // Bouncers (Leapfrog) handle their own collision in behavior
             // Liquid/Napalm handles its own collision in behavior
             if (!shouldRemove &&
                 !this.isParticle(proj.weaponType) &&
                 !this.isDigger(proj.weaponType) &&
+                !this.isSandhog(proj.weaponType) &&
                 !this.isBouncer(proj.weaponType) &&
                 proj.weaponType !== 'liquid_dirt_particle' &&
                 proj.weaponType !== 'napalm_particle' &&
+                proj.weaponType !== 'sandhog_warhead' &&
                 proj.weaponType !== 'tracer' &&
                 proj.weaponType !== 'smoke_tracer') {
                 // Check Collision
@@ -216,7 +224,9 @@ export class PhysicsSystem {
         if (proj.state === 'rolling') return this.rollingBehavior;
         if (proj.weaponType === 'liquid_dirt_particle') return this.liquidBehavior;
         if (proj.weaponType === 'napalm_particle') return this.napalmBehavior;
+        if (proj.weaponType === 'sandhog_warhead') return this.sandhogWarheadBehavior;
         if (this.isParticle(proj.weaponType)) return this.particleBehavior;
+        if (this.isSandhog(proj.weaponType)) return this.sandhogBehavior;
         if (this.isDigger(proj.weaponType)) return this.diggingBehavior;
         if (this.isBouncer(proj.weaponType)) return this.leapfrogBehavior;
         return this.standardBehavior;
@@ -231,8 +241,11 @@ export class PhysicsSystem {
     }
 
     private isDigger(type: string): boolean {
-        return type === 'digger' || type === 'baby_digger' || type === 'heavy_digger' ||
-            type === 'sandhog' || type === 'baby_sandhog' || type === 'heavy_sandhog';
+        return type === 'digger' || type === 'baby_digger' || type === 'heavy_digger';
+    }
+
+    private isSandhog(type: string): boolean {
+        return type === 'sandhog' || type === 'baby_sandhog' || type === 'heavy_sandhog';
     }
 
     private isRoller(weaponType: string): boolean {
@@ -267,7 +280,7 @@ export class PhysicsSystem {
         // If y > SCREEN_HEIGHT, it's a hit (handled by BorderStrategy -> Destroy, but strictly speaking it's a "collision" with floor)
         if (y >= CONSTANTS.SCREEN_HEIGHT) return true;
 
-        if (this.isDigger(proj.weaponType)) return false; // Diggers don't collide with terrain surface
+        if (this.isDigger(proj.weaponType) || this.isSandhog(proj.weaponType)) return false; // Diggers and Sandhogs don't collide with terrain surface
 
         // Check exact pixel solidity (allows tunnels)
         if (this.terrainSystem.isSolid(x, y)) return true;

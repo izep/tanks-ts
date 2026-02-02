@@ -85,4 +85,35 @@ export class SoundManager {
         // Blip
         this.createOscillator('sine', 600, 0.05, 0.1);
     }
+
+    public playSizzle() {
+        if (this.ctx.state === 'suspended') {
+            this.ctx.resume();
+        }
+
+        const bufferSize = Math.floor(this.ctx.sampleRate * 0.1); // 0.1 seconds
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
+
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.05, this.ctx.currentTime); // Very low volume for frequent play
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'highpass';
+        filter.frequency.value = 3000; // Sizzle is high frequency
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.masterGain);
+
+        noise.start();
+    }
 }

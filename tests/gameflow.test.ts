@@ -38,6 +38,10 @@ class MockSoundManager extends SoundManager {
         this.ctx = { createGain: () => ({ connect: () => {}, gain: { value: 0 } }) } as any;
     }
     playUI() {}
+    playFire() {}
+    playExplosion() {}
+    playHit() {}
+    playSizzle() {}
 }
 
 // Mock window

@@ -317,7 +317,11 @@ export class RenderSystem {
         if (isNapalm) {
             this.ctx.globalAlpha = 0.8;
             this.ctx.fillStyle = Math.random() > 0.5 ? '#FFA500' : '#FFFF00'; // Orange or Yellow
+<<<<<<< HEAD
             
+=======
+
+>>>>>>> 4c7770c (Merge main and resolve conflicts in ShopSystem)
             // Draw a flame shape (triangle-ish)
             // Since we rotated the context to align with velocity, "up" relative to screen depends on rotation.
             // But we want fire to burn UP (against gravity) or maybe align with movement?
@@ -326,15 +330,26 @@ export class RenderSystem {
             // If we draw relative to projectile in rotated context, flame points "forward".
             // Let's unrotate temporarily or just draw loosely.
             // Actually, easier to just draw simple flicker circles.
+<<<<<<< HEAD
             
             const flameSize = 2 + Math.random() * 3;
             const flameOffset = 3 + Math.random() * 2;
             
+=======
+
+            const flameSize = 2 + Math.random() * 3;
+            const flameOffset = 3 + Math.random() * 2;
+
+>>>>>>> 4c7770c (Merge main and resolve conflicts in ShopSystem)
             // We want flame to be "up" relative to the GROUND or SCREEN, not velocity.
             // But we are rotated.
             // Undo rotation for the flame?
             this.ctx.rotate(-angle); // Undo rotation
+<<<<<<< HEAD
             
+=======
+
+>>>>>>> 4c7770c (Merge main and resolve conflicts in ShopSystem)
             this.ctx.beginPath();
             this.ctx.arc(0, -flameOffset, flameSize, 0, Math.PI * 2);
             this.ctx.fill();

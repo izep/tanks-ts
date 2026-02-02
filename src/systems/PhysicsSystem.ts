@@ -13,7 +13,10 @@ import {
     ParticleBehavior,
     RollingBehavior,
     DiggingBehavior,
+<<<<<<< HEAD
     LeapfrogBehavior,
+=======
+>>>>>>> 4c7770c (Merge main and resolve conflicts in ShopSystem)
     LiquidBehavior,
     NapalmBehavior,
     type PhysicsContext
@@ -33,7 +36,10 @@ export class PhysicsSystem {
     private particleBehavior: ParticleBehavior;
     private rollingBehavior: RollingBehavior;
     private diggingBehavior: DiggingBehavior;
+<<<<<<< HEAD
     private leapfrogBehavior: LeapfrogBehavior;
+=======
+>>>>>>> 4c7770c (Merge main and resolve conflicts in ShopSystem)
     private liquidBehavior: LiquidBehavior;
     private napalmBehavior: NapalmBehavior;
 
@@ -49,7 +55,10 @@ export class PhysicsSystem {
         this.particleBehavior = new ParticleBehavior();
         this.rollingBehavior = new RollingBehavior();
         this.diggingBehavior = new DiggingBehavior();
+<<<<<<< HEAD
         this.leapfrogBehavior = new LeapfrogBehavior();
+=======
+>>>>>>> 4c7770c (Merge main and resolve conflicts in ShopSystem)
         this.liquidBehavior = new LiquidBehavior();
         this.napalmBehavior = new NapalmBehavior();
     }
@@ -115,6 +124,7 @@ export class PhysicsSystem {
             // 4. Collision Check (Standard & Rolling)
             // Diggers handle their own collision in behavior
             // Particles handle their own collision/ground check in behavior
+<<<<<<< HEAD
             // Bouncers (Leapfrog) handle their own collision in behavior
             // Liquid/Napalm handles its own collision in behavior
             if (!shouldRemove &&
@@ -123,6 +133,10 @@ export class PhysicsSystem {
                 !this.isBouncer(proj.weaponType) &&
                 proj.weaponType !== 'liquid_dirt_particle' &&
                 proj.weaponType !== 'napalm_particle') {
+=======
+            // Liquid/Napalm handles its own collision in behavior
+            if (!shouldRemove && !this.isParticle(proj.weaponType) && !this.isDigger(proj.weaponType) && proj.weaponType !== 'liquid_dirt_particle' && proj.weaponType !== 'napalm_particle') {
+>>>>>>> 4c7770c (Merge main and resolve conflicts in ShopSystem)
                 // Check Collision
                 if (this.checkCollision(state, proj)) {
                     // Special Handling for Rollers (Start Rolling)
@@ -274,13 +288,21 @@ export class PhysicsSystem {
                     // Random spread around impact
                     const offsetX = (Math.random() - 0.5) * 80; // +/- 40px spread
                     const startX = x + offsetX;
+<<<<<<< HEAD
                     
+=======
+
+>>>>>>> 4c7770c (Merge main and resolve conflicts in ShopSystem)
                     // Initial velocity: mostly random spread ("splash")
                     const vx = (Math.random() - 0.5) * 100; // +/- 50
                     const vy = (Math.random() - 0.5) * 20; // +/- 10
 
                     newQueue.push({
+<<<<<<< HEAD
                         id: generateId(),
+=======
+                        id: crypto.randomUUID(),
+>>>>>>> 4c7770c (Merge main and resolve conflicts in ShopSystem)
                         x: startX,
                         y: y - 2, // Slightly above ground
                         vx: vx,
@@ -297,15 +319,25 @@ export class PhysicsSystem {
             const count = 150; // High count for spread
             for (let i = 0; i < count; i++) {
                 // Random spread around impact
+<<<<<<< HEAD
                 const offsetX = (Math.random() - 0.5) * 80; 
                 const startX = x + offsetX;
                 
+=======
+                const offsetX = (Math.random() - 0.5) * 80;
+                const startX = x + offsetX;
+
+>>>>>>> 4c7770c (Merge main and resolve conflicts in ShopSystem)
                 // Splash velocity
                 const vx = (Math.random() - 0.5) * 100;
                 const vy = (Math.random() - 0.5) * 20;
 
                 newQueue.push({
+<<<<<<< HEAD
                     id: generateId(),
+=======
+                    id: crypto.randomUUID(),
+>>>>>>> 4c7770c (Merge main and resolve conflicts in ShopSystem)
                     x: startX,
                     y: y - 5,
                     vx: vx,
@@ -348,7 +380,11 @@ export class PhysicsSystem {
             // This prevented "stacking" if the mound was already 20px radius.
             // Let's REMOVE the snapping logic so it just adds dirt where it hits.
             // This allows stacking mounds.
+<<<<<<< HEAD
             
+=======
+
+>>>>>>> 4c7770c (Merge main and resolve conflicts in ShopSystem)
             // However, if we hit the tank directly (collision), we might want to ensure the tank is covered.
             // Check if impact is inside a tank
             for (const tank of state.tanks) {
@@ -364,9 +400,15 @@ export class PhysicsSystem {
                     break;
                 }
             }
+<<<<<<< HEAD
             
             this.terrainSystem.addTerrain(state, dirtX, dirtY, radius);
             
+=======
+
+            this.terrainSystem.addTerrain(state, dirtX, dirtY, radius);
+
+>>>>>>> 4c7770c (Merge main and resolve conflicts in ShopSystem)
             // Add visual explosion for dirt
             state.explosions.push({
                 id: Math.random(),
@@ -393,7 +435,11 @@ export class PhysicsSystem {
                 const j = Math.floor(Math.random() * (i + 1));
                 [colors[i], colors[j]] = [colors[j], colors[i]];
             }
+<<<<<<< HEAD
             
+=======
+
+>>>>>>> 4c7770c (Merge main and resolve conflicts in ShopSystem)
             for (let i = 0; i < 5; i++) {
                 const angle = Math.random() * 180;
                 const power = 100 + Math.random() * 200;

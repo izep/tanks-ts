@@ -75,11 +75,20 @@ export interface ExplosionState {
   color: string;
 }
 
+export interface SmokeTrailState {
+  id: string;
+  points: { x: number, y: number }[];
+  color: string;
+  createdAt: number;
+  duration: number; // ms
+}
+
 export interface GameState {
   phase: GamePhase;
   tanks: TankState[];
   projectiles: ProjectileState[];
   explosions: ExplosionState[];
+  smokeTrails?: SmokeTrailState[]; // Persistent smoke trails
   currentPlayerIndex: number;
   roundNumber: number;
   maxRounds: number;

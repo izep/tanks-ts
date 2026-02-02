@@ -7,8 +7,10 @@ export interface WeaponStats {
     description: string;
     bundleSize: number; // How many items per purchase
     // Special properties
-    type?: 'missile' | 'mirv' | 'nuke' | 'dirt' | 'roller' | 'digger' | 'napalm' | 'item' | 'bouncer' | 'riot_charge' | 'sandhog' | 'dirt_destroyer' | 'liquid_dirt' | 'dirt_charge' | 'earth_disrupter' | 'plasma' | 'laser';
+    type?: 'missile' | 'mirv' | 'nuke' | 'dirt' | 'roller' | 'digger' | 'napalm' | 'item' | 'bouncer' | 'riot_charge' | 'sandhog' | 'dirt_destroyer' | 'liquid_dirt' | 'dirt_charge' | 'earth_disrupter' | 'plasma' | 'laser' | 'tracer' | 'smoke_tracer';
     effectValue?: number; // e.g., fuel amount, shield count
+    trailColor?: string; // For smoke tracer
+    trailDuration?: number; // For smoke tracer (ms)
 }
 
 export const WEAPON_ORDER = [
@@ -46,6 +48,9 @@ export const WEAPON_ORDER = [
     'hot_napalm',
     'segway', // Roller placeholder
     'heavy_roller',
+    // Utility
+    'tracer',
+    'smoke_tracer',
     // Items
     'fuel_can',
     'shield',
@@ -392,5 +397,27 @@ export const WEAPONS: Record<string, WeaponStats> = {
         type: 'item',
         effectValue: 10,
         bundleSize: 1
+    },
+    'tracer': {
+        name: 'Tracer',
+        cost: 10,
+        radius: 0,
+        damage: 0,
+        color: '#FFFF00',
+        description: 'Shows trajectory, no damage.',
+        type: 'tracer',
+        bundleSize: 20
+    },
+    'smoke_tracer': {
+        name: 'Smoke Tracer',
+        cost: 500,
+        radius: 0,
+        damage: 0,
+        color: '#00FF00',
+        description: 'Trajectory with colored smoke trail.',
+        type: 'smoke_tracer',
+        bundleSize: 10,
+        trailColor: '#00FF00',
+        trailDuration: 4000
     }
 };

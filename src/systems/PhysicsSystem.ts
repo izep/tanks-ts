@@ -127,7 +127,9 @@ export class PhysicsSystem {
                 !this.isDigger(proj.weaponType) &&
                 !this.isBouncer(proj.weaponType) &&
                 proj.weaponType !== 'liquid_dirt_particle' &&
-                proj.weaponType !== 'napalm_particle') {
+                proj.weaponType !== 'napalm_particle' &&
+                proj.weaponType !== 'tracer' &&
+                proj.weaponType !== 'smoke_tracer') {
                 // Check Collision
                 if (this.checkCollision(state, proj)) {
                     // Special Handling for Rollers (Start Rolling)
@@ -138,6 +140,25 @@ export class PhysicsSystem {
                         // Trigger Explosion
                         this.triggerExplosion(state, proj.x, proj.y, proj, newQueue);
                     }
+                }
+            }
+
+            // Tracer collision handling (no explosion)
+            if ((proj.weaponType === 'tracer' || proj.weaponType === 'smoke_tracer') &&
+                this.checkCollision(state, proj)) {
+                shouldRemove = true;
+                
+                // Smoke tracer: save trail persistently
+                if (proj.weaponType === 'smoke_tracer' && proj.trail.length > 0) {
+                    const weaponStats = WEAPONS['smoke_tracer'];
+                    if (!state.smokeTrails) state.smokeTrails = [];
+                    state.smokeTrails.push({
+                        id: proj.id,
+                        points: [...proj.trail],
+                        color: weaponStats.trailColor || '#00FF00',
+                        createdAt: Date.now(),
+                        duration: weaponStats.trailDuration || 4000
+                    });
                 }
             }
 
@@ -173,6 +194,14 @@ export class PhysicsSystem {
                 }
             }
             state.projectiles.length = writeIdx;
+        }
+
+        // Clean up old smoke trails
+        if (state.smokeTrails && state.smokeTrails.length > 0) {
+            const now = Date.now();
+            state.smokeTrails = state.smokeTrails.filter(trail => 
+                (now - trail.createdAt) < trail.duration
+            );
         }
 
         // Check for phase change

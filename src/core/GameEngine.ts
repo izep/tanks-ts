@@ -47,6 +47,7 @@ export class GameEngine {
             tanks: [],
             projectiles: [],
             explosions: [],
+            smokeTrails: [],
             currentPlayerIndex: 0,
             roundNumber: 1,
             maxRounds: 10,

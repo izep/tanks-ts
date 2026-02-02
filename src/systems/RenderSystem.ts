@@ -68,14 +68,21 @@ export class RenderSystem {
         // 2. Base Terrain (includes all dirt that settles naturally)
         this.ctx.drawImage(this.terrainSystem.canvas, 0, 0);
 
-        // 3. Tanks (always visible on top of terrain)
+        // 3. Smoke Trails (persistent)
+        if (state.smokeTrails && state.smokeTrails.length > 0) {
+            state.smokeTrails.forEach(trail => {
+                this.drawSmokeTrail(trail);
+            });
+        }
+
+        // 4. Tanks (always visible on top of terrain)
         state.tanks.forEach(tank => {
             if (tank.health > 0) {
                 this.drawTankSprite(tank);
             }
         });
 
-        // 4. Projectiles
+        // 5. Projectiles
         state.projectiles.forEach(proj => {
             this.drawProjectile(proj);
         });
@@ -360,6 +367,31 @@ export class RenderSystem {
         this.ctx.arc(exp.x, exp.y, exp.currentRadius * 0.7, 0, Math.PI * 2);
         this.ctx.fill();
 
+        this.ctx.restore();
+    }
+
+    private drawSmokeTrail(trail: import('../core/GameState').SmokeTrailState) {
+        if (trail.points.length < 2) return;
+        
+        const now = Date.now();
+        const age = now - trail.createdAt;
+        const fadeProgress = age / trail.duration;
+        const opacity = Math.max(0, 1 - fadeProgress);
+        
+        this.ctx.save();
+        this.ctx.strokeStyle = trail.color;
+        this.ctx.globalAlpha = opacity;
+        this.ctx.lineWidth = 3;
+        this.ctx.lineCap = 'round';
+        this.ctx.lineJoin = 'round';
+        
+        this.ctx.beginPath();
+        this.ctx.moveTo(trail.points[0].x, trail.points[0].y);
+        for (let i = 1; i < trail.points.length; i++) {
+            this.ctx.lineTo(trail.points[i].x, trail.points[i].y);
+        }
+        this.ctx.stroke();
+        
         this.ctx.restore();
     }
 }

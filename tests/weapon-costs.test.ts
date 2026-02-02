@@ -3,14 +3,14 @@ import { WEAPONS } from '../src/core/WeaponData';
 
 describe('Weapon Costs', () => {
     it('should match spec 001 requirements', () => {
-        // From spec 001 and Requirements.md
-        expect(WEAPONS.baby_missile.cost).toBe(500);
+        // From Requirements.md (canonical source of truth)
+        expect(WEAPONS.baby_missile.cost).toBe(400);
         expect(WEAPONS.missile.cost).toBe(1875);
         expect(WEAPONS.baby_nuke.cost).toBe(10000);
-        expect(WEAPONS.nuke.cost).toBe(5000);
-        expect(WEAPONS.mirv.cost).toBe(7500);
+        expect(WEAPONS.nuke.cost).toBe(12000);
+        expect(WEAPONS.mirv.cost).toBe(10000);
         expect(WEAPONS.death_head.cost).toBe(20000);
-        expect(WEAPONS.funky_bomb.cost).toBe(15000);
+        expect(WEAPONS.funky_bomb.cost).toBe(7000);
         
         // From Requirements.md table
         expect(WEAPONS.leapfrog.cost).toBe(10000);

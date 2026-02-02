@@ -62,7 +62,7 @@ export const WEAPON_ORDER = [
 export const WEAPONS: Record<string, WeaponStats> = {
     'baby_missile': {
         name: 'Baby Missile',
-        cost: 500,
+        cost: 400,
         radius: 20,
         damage: 50,
         color: '#FFFFFF',
@@ -80,7 +80,7 @@ export const WEAPONS: Record<string, WeaponStats> = {
     },
     'nuke': {
         name: 'Nuke',
-        cost: 5000,
+        cost: 12000,
         radius: 120,
         damage: 500,
         color: '#FF4400',
@@ -89,7 +89,7 @@ export const WEAPONS: Record<string, WeaponStats> = {
     },
     'mirv': {
         name: 'MIRV',
-        cost: 7500,
+        cost: 10000,
         radius: 30,
         damage: 80,
         color: '#FF00FF',
@@ -179,7 +179,7 @@ export const WEAPONS: Record<string, WeaponStats> = {
     },
     'funky_bomb': {
         name: 'Funky Bomb',
-        cost: 15000,
+        cost: 7000,
         radius: 40,
         damage: 150,
         color: '#00FF00',

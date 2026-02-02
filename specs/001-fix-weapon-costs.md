@@ -12,15 +12,15 @@ Current weapon costs don't match the Requirements.md specification. Incorrect pr
 
 ## Requirements
 
-Update weapon costs in `src/core/WeaponData.ts` to match specification:
+Update weapon costs in `src/core/WeaponData.ts` to match Requirements.md specification:
 
-- **Baby Missile:** $500
+- **Baby Missile:** $400 (was $500 in initial spec, corrected 2026-02-02)
 - **Missile:** $1,875
 - **Baby Nuke:** $10,000
-- **Nuke:** $5,000
-- **MIRV:** $7,500
+- **Nuke:** $12,000 (was $5,000 in initial spec, corrected 2026-02-02)
+- **MIRV:** $10,000 (was $7,500 in initial spec, corrected 2026-02-02)
 - **Death's Head:** $20,000
-- **Funky Bomb:** $15,000
+- **Funky Bomb:** $7,000 (was $15,000 in initial spec, corrected 2026-02-02)
 - **All other weapons:** Per Requirements.md Section 2
 
 ## Acceptance Criteria

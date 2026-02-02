@@ -13,6 +13,7 @@ import {
     ParticleBehavior,
     RollingBehavior,
     DiggingBehavior,
+    LeapfrogBehavior,
     LiquidBehavior,
     NapalmBehavior,
     type PhysicsContext
@@ -32,6 +33,7 @@ export class PhysicsSystem {
     private particleBehavior: ParticleBehavior;
     private rollingBehavior: RollingBehavior;
     private diggingBehavior: DiggingBehavior;
+    private leapfrogBehavior: LeapfrogBehavior;
     private liquidBehavior: LiquidBehavior;
     private napalmBehavior: NapalmBehavior;
 
@@ -47,6 +49,7 @@ export class PhysicsSystem {
         this.particleBehavior = new ParticleBehavior();
         this.rollingBehavior = new RollingBehavior();
         this.diggingBehavior = new DiggingBehavior();
+        this.leapfrogBehavior = new LeapfrogBehavior();
         this.liquidBehavior = new LiquidBehavior();
         this.napalmBehavior = new NapalmBehavior();
     }
@@ -112,31 +115,19 @@ export class PhysicsSystem {
             // 4. Collision Check (Standard & Rolling)
             // Diggers handle their own collision in behavior
             // Particles handle their own collision/ground check in behavior
+            // Bouncers (Leapfrog) handle their own collision in behavior
             // Liquid/Napalm handles its own collision in behavior
-            if (!shouldRemove && !this.isParticle(proj.weaponType) && !this.isDigger(proj.weaponType) && proj.weaponType !== 'liquid_dirt_particle' && proj.weaponType !== 'napalm_particle') {
+            if (!shouldRemove &&
+                !this.isParticle(proj.weaponType) &&
+                !this.isDigger(proj.weaponType) &&
+                !this.isBouncer(proj.weaponType) &&
+                proj.weaponType !== 'liquid_dirt_particle' &&
+                proj.weaponType !== 'napalm_particle') {
                 // Check Collision
                 if (this.checkCollision(state, proj)) {
                     // Special Handling for Rollers (Start Rolling)
                     if (this.isRoller(proj.weaponType) && proj.state !== 'rolling') {
                         this.startRolling(proj);
-                    } else if (proj.weaponType === 'leapfrog') {
-                        // Leapfrog Logic (handled in behavior mostly, but if we are here it hit something)
-                        // Actually checkCollision returns true if it hits ground or tank.
-                        // For leapfrog, we want to bounce.
-                        // TODO: Move Leapfrog collision logic fully to behavior or handle here?
-                        // Current legacy logic:
-                        proj.bounces = (proj.bounces || 0) + 1;
-                        this.triggerExplosion(state, proj.x, proj.y, { ...proj, weaponType: 'baby_missile' }); // bounce puff
-
-                        if (proj.bounces < 3) {
-                            // Bounce!
-                            proj.vy = -Math.abs(proj.vy) * 0.7; // Dampen
-                            proj.vx *= 0.8; // Friction
-                            proj.y -= 5; // Lift up
-                        } else {
-                            shouldRemove = true;
-                            this.triggerExplosion(state, proj.x, proj.y, proj, newQueue);
-                        }
                     } else {
                         shouldRemove = true;
                         // Trigger Explosion
@@ -193,7 +184,12 @@ export class PhysicsSystem {
         if (proj.weaponType === 'napalm_particle') return this.napalmBehavior;
         if (this.isParticle(proj.weaponType)) return this.particleBehavior;
         if (this.isDigger(proj.weaponType)) return this.diggingBehavior;
+        if (this.isBouncer(proj.weaponType)) return this.leapfrogBehavior;
         return this.standardBehavior;
+    }
+
+    private isBouncer(type: string): boolean {
+        return WEAPONS[type]?.type === 'bouncer';
     }
 
     private isParticle(type: string): boolean {
@@ -374,7 +370,7 @@ export class PhysicsSystem {
             // Add visual explosion for dirt
             state.explosions.push({
                 id: Math.random(),
-                x: dirtX, 
+                x: dirtX,
                 y: dirtY,
                 maxRadius: radius * 1.2,
                 currentRadius: 0,

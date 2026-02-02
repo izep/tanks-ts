@@ -382,7 +382,7 @@ export class TerrainSystem {
         this.ctx.restore();
 
         // We don't mark terrainDirty or update mask because the shape didn't change, just color.
-        // However, we might want to flag for a frame update if we used a separate layer, 
+        // However, we might want to flag for a frame update if we used a separate layer,
         // but here we draw directly to the terrain canvas.
     }
 

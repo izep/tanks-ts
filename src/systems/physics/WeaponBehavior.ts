@@ -64,13 +64,65 @@ export class StandardFlightBehavior implements WeaponBehavior {
             }
         }
 
-        // Leapfrog (Bouncer) Logic
-        if (projectile.weaponType === 'leapfrog') {
-             // Check for ground collision to bounce
-             // Note: Standard collision check usually handles this, but for bouncer we need interception
-             // This is handled in collision check in PhysicsSystem usually.
-             // But if we move logic here, we need to know if it HIT something.
-             // StandardFlight just updates position. Collision is external or needs to be injected?
+        return false;
+    }
+}
+
+export class LeapfrogBehavior implements WeaponBehavior {
+    update(projectile: ProjectileState, state: GameState, dt: number, context: PhysicsContext): boolean {
+        // 1. Physics (Standard Flight)
+        projectile.vx += state.wind * dt * 6;
+        projectile.vy += state.gravity * dt * 10;
+        projectile.x += projectile.vx * dt;
+        projectile.y += projectile.vy * dt;
+
+        // 2. Collision Detection
+        let hit = false;
+
+        // Ground Check
+        const groundY = context.terrainSystem.getGroundY(Math.floor(projectile.x));
+        if (projectile.y >= groundY) {
+            hit = true;
+            projectile.y = groundY; // Snap to ground
+        }
+
+        // Bottom of screen check (fallback)
+        if (!hit && projectile.y >= CONSTANTS.SCREEN_HEIGHT) {
+             hit = true;
+        }
+
+        // Tank Check (if not already hit ground)
+        if (!hit) {
+             for (const tank of state.tanks) {
+                if (tank.health <= 0) continue;
+                const dx = projectile.x - tank.x;
+                const dy = projectile.y - (tank.y - 10);
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 15) {
+                    hit = true;
+                    break;
+                }
+            }
+        }
+
+        // 3. Handle Collision
+        if (hit) {
+             projectile.bounces = (projectile.bounces || 0) + 1;
+
+             // Visual Puff (using triggerExplosion with baby_missile type as per legacy code)
+             context.triggerExplosion(state, projectile.x, projectile.y, { ...projectile, weaponType: 'baby_missile' });
+
+             if (projectile.bounces < 3) {
+                 // Bounce
+                 projectile.vy = -Math.abs(projectile.vy) * 0.7; // Dampen and reflect up
+                 projectile.vx *= 0.8; // Friction
+                 projectile.y -= 5; // Lift up to avoid sticking
+                 return false;
+             } else {
+                 // Final Explosion
+                 context.triggerExplosion(state, projectile.x, projectile.y, projectile);
+                 return true;
+             }
         }
 
         return false;

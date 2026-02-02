@@ -37,6 +37,7 @@ export class TerrainSystem {
     private mapsLoaded: boolean = false;
 
     private terrainMask: Uint8Array;
+    private heightMap: Uint16Array;
     private dirtyColumns: Set<number> = new Set();
 
     constructor(width: number, height: number) {
@@ -47,6 +48,7 @@ export class TerrainSystem {
         this.canvas.height = height;
         this.ctx = this.canvas.getContext('2d', { willReadFrequently: true })!;
         this.terrainMask = new Uint8Array(width * height);
+        this.heightMap = new Uint16Array(width).fill(height);
     }
 
     public async init() {
@@ -105,6 +107,7 @@ export class TerrainSystem {
             this.generateProcedural(rng);
         }
 
+        this.recalculateHeightMap();
         gameState.terrainDirty = false;
     }
 
@@ -362,6 +365,7 @@ export class TerrainSystem {
         // Mark Columns Dirty
         for (let c = minX; c <= maxX; c++) {
             this.dirtyColumns.add(c);
+            this.updateHeightMapColumn(c);
         }
 
         gameState.terrainDirty = true;
@@ -413,6 +417,7 @@ export class TerrainSystem {
         // Mark Columns Dirty
         for (let c = minX; c <= maxX; c++) {
             this.dirtyColumns.add(c);
+            this.updateHeightMapColumn(c);
         }
 
         gameState.terrainDirty = true;
@@ -470,6 +475,7 @@ export class TerrainSystem {
         // Mark Columns Dirty
         for (let c = minX; c <= maxX; c++) {
             this.dirtyColumns.add(c);
+            this.updateHeightMapColumn(c);
         }
         gameState.terrainDirty = true;
     }
@@ -478,14 +484,25 @@ export class TerrainSystem {
     public getGroundY(x: number): number {
         if (x < 0 || x >= this.width) return this.height;
         x = Math.floor(x);
+        return this.heightMap[x];
+    }
 
-        // Fast mask lookup
+    private updateHeightMapColumn(x: number) {
+        if (x < 0 || x >= this.width) return;
+
         for (let y = 0; y < this.height; y++) {
             if (this.terrainMask[y * this.width + x] === 1) {
-                return y;
+                this.heightMap[x] = y;
+                return;
             }
         }
-        return this.height;
+        this.heightMap[x] = this.height;
+    }
+
+    private recalculateHeightMap() {
+        for (let x = 0; x < this.width; x++) {
+            this.updateHeightMapColumn(x);
+        }
     }
 
     public settle(gameState: GameState): boolean {
@@ -545,6 +562,7 @@ export class TerrainSystem {
 
             if (colMoved) {
                 anyMoved = true;
+                this.updateHeightMapColumn(x);
             } else {
                 settledColumns.add(x);
             }

@@ -1,0 +1,1 @@
+2026-02-03: Spec 013 (Fix Missile Costs) marked COMPLETE. All requirements and tests pass. No regressions found. Baby Missile and Missile costs verified at $400 and $1,875 respectively. Lessons: Test coverage for weapon costs is robust; future cost changes should update both WeaponData and weapon-costs.test.ts.

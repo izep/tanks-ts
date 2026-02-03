@@ -1,4 +1,4 @@
-## Status: INCOMPLETE
+## Status: COMPLETE
 
 # Spec 013: Fix Missile Costs
 
@@ -17,11 +17,11 @@ Update weapon costs in `src/core/WeaponData.ts`:
 - **Missile:** $1,875
 
 ## Acceptance Criteria
-- [ ] Baby Missile cost is $400
-- [ ] Missile cost is $1,875
-- [ ] Shop displays correct prices
-- [ ] Can purchase at specified costs
-- [ ] Tests verify costs match spec
+- [x] Baby Missile cost is $400
+- [x] Missile cost is $1,875
+- [x] Shop displays correct prices
+- [x] Can purchase at specified costs
+- [x] Tests verify costs match spec
 
 ## Output
 

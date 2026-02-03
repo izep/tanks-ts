@@ -1,4 +1,4 @@
-## Status: INCOMPLETE
+## Status: COMPLETE
 
 # Spec 015: Fix MIRV and Funky Bomb Costs
 
@@ -17,11 +17,11 @@ Update weapon costs in `src/core/WeaponData.ts`:
 - **Funky Bomb:** $7,000
 
 ## Acceptance Criteria
-- [ ] MIRV cost is $10,000
-- [ ] Funky Bomb cost is $7,000
-- [ ] Shop displays correct prices
-- [ ] Can purchase at specified costs
-- [ ] Tests verify costs match spec
+- [x] MIRV cost is $10,000
+- [x] Funky Bomb cost is $7,000
+- [x] Shop displays correct prices
+- [x] Can purchase at specified costs
+- [x] Tests verify costs match spec
 
 ## Output
 

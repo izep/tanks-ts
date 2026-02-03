@@ -1,4 +1,4 @@
-## Status: INCOMPLETE
+## Status: COMPLETE
 
 # Spec 016: Fix Death's Head Cost
 
@@ -16,10 +16,10 @@ Update weapon cost in `src/core/WeaponData.ts`:
 - **Death's Head:** $20,000
 
 ## Acceptance Criteria
-- [ ] Death's Head cost is $20,000
-- [ ] Shop displays correct price
-- [ ] Can purchase at specified cost
-- [ ] Tests verify cost matches spec
+- [x] Death's Head cost is $20,000
+- [x] Shop displays correct price
+- [x] Can purchase at specified cost
+- [x] Tests verify cost matches spec
 
 ## Output
 

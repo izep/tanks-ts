@@ -1,4 +1,4 @@
-## Status: INCOMPLETE
+## Status: COMPLETE
 
 # Spec 014: Fix Nuke Costs
 
@@ -17,11 +17,11 @@ Update weapon costs in `src/core/WeaponData.ts`:
 - **Nuke:** $12,000
 
 ## Acceptance Criteria
-- [ ] Baby Nuke cost is $10,000
-- [ ] Nuke cost is $12,000
-- [ ] Shop displays correct prices
-- [ ] Can purchase at specified costs
-- [ ] Tests verify costs match spec
+- [x] Baby Nuke cost is $10,000
+- [x] Nuke cost is $12,000
+- [x] Shop displays correct prices
+- [x] Can purchase at specified costs
+- [x] Tests verify costs match spec
 
 ## Output
 

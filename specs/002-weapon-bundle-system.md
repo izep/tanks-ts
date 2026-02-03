@@ -58,4 +58,4 @@ Bundle sizes (from Requirements.md):
 
 **Output when complete:** `<promise>DONE</promise>`
 
-<!-- NR_OF_TRIES: 2 -->
+<!-- NR_OF_TRIES: 3 -->

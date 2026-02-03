@@ -361,7 +361,7 @@ export const WEAPONS: Record<string, WeaponStats> = {
         radius: 30,
         damage: 80,
         color: '#00AA00',
-        description: 'Bounces 3 times before exploding.',
+        description: 'Fires 3 sequential warheads, each launching after the previous explodes.',
         type: 'bouncer',
         bundleSize: 2
     },

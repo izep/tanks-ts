@@ -68,4 +68,4 @@ export class EconomySystem {
 
 **Output when complete:** `<promise>DONE</promise>`
 
-<!-- NR_OF_TRIES: 3 -->
+<!-- NR_OF_TRIES: 4 -->

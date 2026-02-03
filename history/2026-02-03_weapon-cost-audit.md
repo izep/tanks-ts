@@ -1,0 +1,1 @@
+2026-02-03: Completed full audit of all weapon costs in WeaponData.ts against Requirements.md Section 2. All costs match spec, tests and build pass. No regressions found.

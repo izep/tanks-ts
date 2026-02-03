@@ -14,8 +14,8 @@ Tracer and Smoke Tracer not implemented. These are zero-damage weapons used for 
 
 Implement Tracer weapons per Requirements.md:
 
-1. **Tracer:** Zero damage, shows trajectory, cheap ($50)
-2. **Smoke Tracer:** Like Tracer but leaves colored trail, slightly more expensive ($100)
+1. **Tracer:** Zero damage, shows trajectory, very cheap ($10)
+2. **Smoke Tracer:** Like Tracer but leaves colored trail, moderately priced ($500)
 
 **Behavior:**
 - Follow normal projectile physics

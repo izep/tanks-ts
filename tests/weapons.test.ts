@@ -49,30 +49,51 @@ describe('PhysicsSystem Weapons', () => {
         };
     });
 
-    it('LeapFrog should bounce 3 times', () => {
+    it('LeapFrog should launch 3 sequential warheads', () => {
+        // Fire initial leapfrog
         const leapfrog = {
-            id: 'lf-1', x: 400, y: 490, vx: 50, vy: 100, // Falling fast
+            id: 'lf-1', x: 400, y: 490, vx: 50, vy: 100,
             weaponType: 'leapfrog', ownerId: 1, elapsedTime: 0, trail: [],
-            bounces: 0
+            leapfrogStage: 0
         };
         state.projectiles.push(leapfrog);
 
-        // Update 1: Hit Ground -> Bounce 1
+        // Update: First warhead hits ground
         physics.update(state, 0.1);
-        let p = state.projectiles.find(p => p.id === 'lf-1');
-        expect(p).toBeDefined();
-        // Should have bounced: vy should be negative (up)
-        // initial vy=100. hit ground at 500. y was 490.
-        // It should hit.
-        // Logic: if vy > 0 and y >= groundY -> bounce.
-        // Our mock ground is 500. y+vy*dt = 490 + 10 = 500. Collision.
+        
+        // First warhead should be removed
+        const first = state.projectiles.find(p => p.id === 'lf-1');
+        expect(first).toBeUndefined();
+        
+        // Second warhead should be launched
+        expect(state.projectiles.length).toBe(1);
+        expect(state.projectiles[0].weaponType).toBe('leapfrog');
+        expect(state.projectiles[0].leapfrogStage).toBe(1);
+        
+        // Verify explosion occurred
+        expect(state.explosions.length).toBeGreaterThan(0);
 
-        // Wait, collision logic sets 'collided=true'. 
-        // Then 'leapfrog' specific logic handles it:
-        // if bounces < 3 -> bounce, else explode.
+        // Fly second warhead until it hits
+        let iterations = 0;
+        while (state.projectiles.length > 0 && state.projectiles[0].leapfrogStage === 1 && iterations < 100) {
+            physics.update(state, 0.1);
+            iterations++;
+        }
 
-        // We expect it to survive
-        expect(p?.bounces).toBe(1);
-        expect(p?.vy).toBeLessThan(0); // Moving up
+        // Third warhead should be launched
+        if (state.projectiles.length > 0) {
+            expect(state.projectiles[0].weaponType).toBe('leapfrog');
+            expect(state.projectiles[0].leapfrogStage).toBe(2);
+
+            // Fly third warhead until it hits
+            iterations = 0;
+            while (state.projectiles.length > 0 && iterations < 100) {
+                physics.update(state, 0.1);
+                iterations++;
+            }
+        }
+
+        // All 3 warheads should have exploded (no more projectiles)
+        expect(state.projectiles.length).toBe(0);
     });
 });

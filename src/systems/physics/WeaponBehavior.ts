@@ -79,6 +79,11 @@ export class StandardFlightBehavior implements WeaponBehavior {
 
 export class LeapfrogBehavior implements WeaponBehavior {
     update(projectile: ProjectileState, state: GameState, dt: number, context: PhysicsContext): boolean {
+        // Initialize stage if not set
+        if (projectile.leapfrogStage === undefined) {
+            projectile.leapfrogStage = 0;
+        }
+
         // 1. Physics (Standard Flight)
         projectile.vx += state.wind * dt * 6;
         projectile.vy += state.gravity * dt * 10;
@@ -92,17 +97,17 @@ export class LeapfrogBehavior implements WeaponBehavior {
         const groundY = context.terrainSystem.getGroundY(Math.floor(projectile.x));
         if (projectile.y >= groundY) {
             hit = true;
-            projectile.y = groundY; // Snap to ground
+            projectile.y = groundY;
         }
 
-        // Bottom of screen check (fallback)
+        // Bottom of screen check
         if (!hit && projectile.y >= CONSTANTS.SCREEN_HEIGHT) {
-             hit = true;
+            hit = true;
         }
 
-        // Tank Check (if not already hit ground)
+        // Tank Check
         if (!hit) {
-             for (const tank of state.tanks) {
+            for (const tank of state.tanks) {
                 if (tank.health <= 0) continue;
                 const dx = projectile.x - tank.x;
                 const dy = projectile.y - (tank.y - 10);
@@ -114,24 +119,34 @@ export class LeapfrogBehavior implements WeaponBehavior {
             }
         }
 
-        // 3. Handle Collision
+        // 3. Handle Impact - Sequential Warhead Launch
         if (hit) {
-             projectile.bounces = (projectile.bounces || 0) + 1;
+            // Explode current warhead
+            context.triggerExplosion(state, projectile.x, projectile.y, projectile);
 
-             // Visual Puff (using triggerExplosion with baby_missile type as per legacy code)
-             context.triggerExplosion(state, projectile.x, projectile.y, { ...projectile, weaponType: 'baby_missile' });
+            // Increment stage
+            projectile.leapfrogStage = (projectile.leapfrogStage || 0) + 1;
 
-             if (projectile.bounces < 3) {
-                 // Bounce
-                 projectile.vy = -Math.abs(projectile.vy) * 0.7; // Dampen and reflect up
-                 projectile.vx *= 0.8; // Friction
-                 projectile.y -= 5; // Lift up to avoid sticking
-                 return false;
-             } else {
-                 // Final Explosion
-                 context.triggerExplosion(state, projectile.x, projectile.y, projectile);
-                 return true;
-             }
+            // Launch next warhead if we haven't launched all 3
+            if (projectile.leapfrogStage < 3) {
+                // Launch next warhead from explosion point
+                const nextWarhead = {
+                    id: generateId(),
+                    x: projectile.x,
+                    y: projectile.y - 10, // Launch slightly above explosion
+                    vx: projectile.vx * 0.8, // Slightly dampened velocity
+                    vy: -100, // Launch upward
+                    weaponType: 'leapfrog',
+                    ownerId: projectile.ownerId,
+                    elapsedTime: 0,
+                    trail: [],
+                    leapfrogStage: projectile.leapfrogStage
+                };
+                context.addProjectile(nextWarhead);
+            }
+
+            // Remove current warhead
+            return true;
         }
 
         return false;

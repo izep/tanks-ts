@@ -62,6 +62,7 @@ export interface ProjectileState {
   generation?: number;
   state?: string; // flying, rolling, burrowing
   bounces?: number;
+  leapfrogStage?: number; // 0, 1, 2 for sequential warhead tracking
   color?: string;
   // Sandhog warhead properties
   direction?: number; // 1 or -1 for horizontal direction

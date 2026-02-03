@@ -1,7 +1,5 @@
 ## Status: COMPLETE
 
-## Status: COMPLETE
-
 # Spec 012: Fix Leapfrog Mechanics
 
 **Priority:** Critical  

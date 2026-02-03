@@ -1,6 +1,8 @@
-## Status: COMPLETE
+## Status: SUPERSEDED
 
 # Spec 001: Fix Weapon Costs
+
+**SUPERSEDED by specs 013-016. See new specs for actionable work.**
 
 **Priority:** Critical  
 **Phase:** 1 (Critical Fixes)  
@@ -42,4 +44,4 @@ Update weapon costs in `src/core/WeaponData.ts` to match Requirements.md specifi
 
 **Output when complete:** `<promise>DONE</promise>`
 
-<!-- NR_OF_TRIES: 10 -->
+<!-- NR_OF_TRIES: 11 -->

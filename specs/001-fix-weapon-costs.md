@@ -1,5 +1,7 @@
 ## Status: SUPERSEDED
 
+## Status: COMPLETE
+
 # Spec 001: Fix Weapon Costs
 
 **SUPERSEDED by specs 013-016. See new specs for actionable work.**

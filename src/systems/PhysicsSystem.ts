@@ -366,7 +366,7 @@ export class PhysicsSystem {
                 });
             }
             this.terrainSystem.explode(state, x, y, 20); // Initial blast
-        } else if (weaponStats.type === 'riot_charge') {
+        } else if (weaponStats.type === 'riot_charge' || weaponStats.type === 'dirt_destroyer') {
             this.terrainSystem.explode(state, x, y, radius);
         } else if (weaponStats.type === 'earth_disrupter') {
             state.terrainDirty = true;

@@ -42,4 +42,4 @@ Update weapon costs in `src/core/WeaponData.ts` to match Requirements.md specifi
 
 **Output when complete:** `<promise>DONE</promise>`
 
-<!-- NR_OF_TRIES: 4 -->
+<!-- NR_OF_TRIES: 5 -->

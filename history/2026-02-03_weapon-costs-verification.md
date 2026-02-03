@@ -1,0 +1,1 @@
+Verified all weapon costs in WeaponData.ts match Requirements.md Section 2. All tests pass, no regressions found. Spec 017 marked complete.

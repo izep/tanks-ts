@@ -40,15 +40,47 @@ export class TerrainSystem {
     private heightMap: Uint16Array;
     private dirtyColumns: Set<number> = new Set();
 
+    // Optimization: Keep pixel data in memory to avoid getImageData
+    private terrainPixels: Uint32Array;
+    private imageData: ImageData;
+
     constructor(width: number, height: number) {
         this.width = width;
         this.height = height;
         this.canvas = document.createElement('canvas');
         this.canvas.width = width;
         this.canvas.height = height;
-        this.ctx = this.canvas.getContext('2d', { willReadFrequently: true })!;
+        // Removed willReadFrequently: true because we are avoiding getImageData
+        this.ctx = this.canvas.getContext('2d')!;
         this.terrainMask = new Uint8Array(width * height);
         this.heightMap = new Uint16Array(width).fill(height);
+
+        // Initialize pixel buffer
+        this.imageData = new ImageData(width, height);
+        this.terrainPixels = new Uint32Array(this.imageData.data.buffer);
+    }
+
+    private syncFromCanvas(x: number, y: number, w: number, h: number) {
+        if (w <= 0 || h <= 0) return;
+
+        // Clamp to canvas bounds
+        const sx = Math.max(0, x);
+        const sy = Math.max(0, y);
+        const sw = Math.min(w, this.width - sx);
+        const sh = Math.min(h, this.height - sy);
+
+        if (sw <= 0 || sh <= 0) return;
+
+        const img = this.ctx.getImageData(sx, sy, sw, sh);
+        const data = new Uint32Array(img.data.buffer);
+
+        for (let row = 0; row < sh; row++) {
+            const srcStart = row * sw;
+            const destStart = (sy + row) * this.width + sx;
+            for (let col = 0; col < sw; col++) {
+                this.terrainPixels[destStart + col] = data[srcStart + col];
+            }
+        }
     }
 
     public async init() {
@@ -106,6 +138,9 @@ export class TerrainSystem {
             console.log("Generating procedural terrain...");
             this.generateProcedural(rng);
         }
+
+        // Sync pixels from canvas to memory
+        this.syncFromCanvas(0, 0, this.width, this.height);
 
         this.recalculateHeightMap();
         gameState.terrainDirty = false;
@@ -368,6 +403,9 @@ export class TerrainSystem {
             this.updateHeightMapColumn(c);
         }
 
+        // Sync pixels
+        this.syncFromCanvas(minX, minY, maxX - minX + 1, maxY - minY + 1);
+
         gameState.terrainDirty = true;
     }
 
@@ -384,6 +422,13 @@ export class TerrainSystem {
         // We don't mark terrainDirty or update mask because the shape didn't change, just color.
         // However, we might want to flag for a frame update if we used a separate layer,
         // but here we draw directly to the terrain canvas.
+
+        // Sync pixels
+        const minX = Math.max(0, Math.floor(x - radius));
+        const maxX = Math.min(this.width - 1, Math.ceil(x + radius));
+        const minY = Math.max(0, Math.floor(y - radius));
+        const maxY = Math.min(this.height - 1, Math.ceil(y + radius));
+        this.syncFromCanvas(minX, minY, maxX - minX + 1, maxY - minY + 1);
     }
 
     public addTerrain(gameState: GameState, x: number, y: number, radius: number, color?: string) {
@@ -419,6 +464,9 @@ export class TerrainSystem {
             this.dirtyColumns.add(c);
             this.updateHeightMapColumn(c);
         }
+
+        // Sync pixels
+        this.syncFromCanvas(minX, minY, maxX - minX + 1, maxY - minY + 1);
 
         gameState.terrainDirty = true;
     }
@@ -477,6 +525,10 @@ export class TerrainSystem {
             this.dirtyColumns.add(c);
             this.updateHeightMapColumn(c);
         }
+
+        // Sync pixels
+        this.syncFromCanvas(minX, minY, maxX - minX + 1, maxY - minY + 1);
+
         gameState.terrainDirty = true;
     }
 
@@ -523,11 +575,17 @@ export class TerrainSystem {
         const height = this.height;
         let anyMoved = false;
 
-        const imageData = this.ctx.getImageData(0, 0, width, height);
-        const view = new Uint32Array(imageData.data.buffer);
+        // Use cached pixel data
+        const view = this.terrainPixels;
         const mask = this.terrainMask;
 
         const settledColumns = new Set<number>();
+
+        // Track bounding box of changes for efficient update
+        let minX = width;
+        let maxX = 0;
+        let minY = height;
+        let maxY = 0;
 
         // Process each dirty column
         for (const x of columnsToProcess) {
@@ -555,6 +613,12 @@ export class TerrainSystem {
 
                         passMoved = true;
                         colMoved = true;
+
+                        // Update bounds
+                        if (x < minX) minX = x;
+                        if (x > maxX) maxX = x;
+                        if (y - 1 < minY) minY = y - 1; // y-1 is source (higher up)
+                        if (y > maxY) maxY = y;         // y is destination (lower down)
                     }
                 }
                 if (!passMoved) break;
@@ -574,7 +638,12 @@ export class TerrainSystem {
         }
 
         if (anyMoved) {
-            this.ctx.putImageData(imageData, 0, 0);
+            // Update only the dirty rect
+            const dirtyW = maxX - minX + 1;
+            const dirtyH = maxY - minY + 1;
+            if (dirtyW > 0 && dirtyH > 0) {
+                 this.ctx.putImageData(this.imageData, 0, 0, minX, minY, dirtyW, dirtyH);
+            }
             gameState.terrainDirty = true;
         } else if (this.dirtyColumns.size === 0) {
             gameState.terrainDirty = false;

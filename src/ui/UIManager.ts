@@ -542,6 +542,7 @@ export class UIManager {
 
     // Cached state for UI helpers
     private _lastState: GameState | null = null;
+    private _domCache: Record<string, string | number | boolean> = {};
 
     public update(state: GameState) {
         this._lastState = state;
@@ -550,74 +551,108 @@ export class UIManager {
         if (this.lastPhase !== state.phase) {
             this.handlePhaseChange(state);
             this.lastPhase = state.phase;
+            // Force refresh when phase changes (optional, but safer)
+            this._domCache = {};
         }
 
         const tank = state.tanks[state.currentPlayerIndex];
         if (tank) {
-            document.getElementById('p-name')!.innerText = tank.name;
-            const displayAngle = tank.angle <= 90 ? tank.angle : 180 - tank.angle;
-            document.getElementById('p-angle')!.innerText = Math.floor(displayAngle).toString();
-            document.getElementById('p-power')!.innerText = Math.floor(tank.power).toString();
+            if (this._domCache['p-name'] !== tank.name) {
+                document.getElementById('p-name')!.innerText = tank.name;
+                this._domCache['p-name'] = tank.name;
+            }
 
-            document.getElementById('p-health')!.innerText = Math.floor(tank.health).toString();
+            const displayAngle = tank.angle <= 90 ? tank.angle : 180 - tank.angle;
+            const angleVal = Math.floor(displayAngle);
+            if (this._domCache['p-angle'] !== angleVal) {
+                document.getElementById('p-angle')!.innerText = angleVal.toString();
+                this._domCache['p-angle'] = angleVal;
+            }
+
+            const powerVal = Math.floor(tank.power);
+            if (this._domCache['p-power'] !== powerVal) {
+                document.getElementById('p-power')!.innerText = powerVal.toString();
+                this._domCache['p-power'] = powerVal;
+            }
+
+            const healthVal = Math.floor(tank.health);
+            if (this._domCache['p-health'] !== healthVal) {
+                document.getElementById('p-health')!.innerText = healthVal.toString();
+                this._domCache['p-health'] = healthVal;
+            }
 
             // Shield
-            const shieldRow = document.getElementById('p-shield')?.parentElement;
-            if (shieldRow) {
-                const sCount = tank.accessories['shield'] || 0;
-                const sActive = tank.activeShield !== undefined;
+            const sCount = tank.accessories['shield'] || 0;
+            const sActive = tank.activeShield !== undefined;
+            const shieldKey = `shield-${sCount}-${sActive}-${tank.shieldHealth ? Math.floor(tank.shieldHealth) : 0}`;
 
-                if (sCount <= 0 && !sActive) {
-                    shieldRow.style.display = 'none';
-                } else {
-                    shieldRow.style.display = 'flex';
-                    // Icon
-                    const icon = sActive ? '<i class="fa-solid fa-shield-alt" style="color:cyan"></i>' : '<i class="fa-solid fa-shield-alt"></i>';
-
-                    const shieldVal = document.getElementById('p-shield')!;
-                    shieldVal.innerHTML = `${icon} `; // Reset
-
-                    if (sActive) {
-                        const txt = document.createTextNode(`${Math.floor(tank.shieldHealth || 0)} (ON)`);
-                        shieldVal.appendChild(txt);
-                        shieldVal.style.color = "cyan";
+            if (this._domCache['shield-key'] !== shieldKey) {
+                this._domCache['shield-key'] = shieldKey;
+                const shieldRow = document.getElementById('p-shield')?.parentElement;
+                if (shieldRow) {
+                    if (sCount <= 0 && !sActive) {
+                        shieldRow.style.display = 'none';
                     } else {
-                        const txt = document.createTextNode(`${sCount}`);
-                        shieldVal.appendChild(txt);
-                        shieldVal.style.color = "white";
+                        shieldRow.style.display = 'flex';
+                        // Icon
+                        const icon = sActive ? '<i class="fa-solid fa-shield-alt" style="color:cyan"></i>' : '<i class="fa-solid fa-shield-alt"></i>';
+
+                        const shieldVal = document.getElementById('p-shield')!;
+                        shieldVal.innerHTML = `${icon} `; // Reset
+
+                        if (sActive) {
+                            const txt = document.createTextNode(`${Math.floor(tank.shieldHealth || 0)} (ON)`);
+                            shieldVal.appendChild(txt);
+                            shieldVal.style.color = "cyan";
+                        } else {
+                            const txt = document.createTextNode(`${sCount}`);
+                            shieldVal.appendChild(txt);
+                            shieldVal.style.color = "white";
+                        }
                     }
                 }
             }
 
-            document.getElementById('p-credits')!.innerText = tank.credits.toString();
+            if (this._domCache['p-credits'] !== tank.credits) {
+                document.getElementById('p-credits')!.innerText = tank.credits.toString();
+                this._domCache['p-credits'] = tank.credits;
+            }
 
             const w = state.wind;
             const arrow = w > 0 ? '→' : (w < 0 ? '←' : '');
-            document.getElementById('p-wind')!.innerText = `${arrow} ${Math.abs(w).toFixed(1)}`;
+            const windDisplay = `${arrow} ${Math.abs(w).toFixed(1)}`;
+
+            if (this._domCache['p-wind'] !== windDisplay) {
+                document.getElementById('p-wind')!.innerText = windDisplay;
+                this._domCache['p-wind'] = windDisplay;
+            }
 
             const weaponId = tank.currentWeapon || 'missile';
-            const weapon = WEAPONS[weaponId];
-            const weaponName = weapon?.name || weaponId;
-
-            const iconPath = this.getWeaponIconPath(weaponId);
-
-            const weaponEl = document.getElementById('p-weapon')!;
-            weaponEl.innerHTML = `<img src="${iconPath}" style="width:24px;height:24px;vertical-align:middle; margin-right:5px;"> ${weaponName}`;
-            weaponEl.style.color = weapon?.color || '#4db8ff';
+            if (this._domCache['p-weapon'] !== weaponId) {
+                const weapon = WEAPONS[weaponId];
+                const weaponName = weapon?.name || weaponId;
+                const iconPath = this.getWeaponIconPath(weaponId);
+                const weaponEl = document.getElementById('p-weapon')!;
+                weaponEl.innerHTML = `<img src="${iconPath}" style="width:24px;height:24px;vertical-align:middle; margin-right:5px;"> ${weaponName}`;
+                weaponEl.style.color = weapon?.color || '#4db8ff';
+                this._domCache['p-weapon'] = weaponId;
+            }
 
             // Shield Button State
-            const btnShield = document.getElementById('btn-shield');
-            if (btnShield) {
-                const sCount = tank.accessories['shield'] || 0;
-                const sActive = tank.activeShield !== undefined;
-                if (sCount > 0 || sActive) {
-                    btnShield.style.opacity = '1';
-                    btnShield.style.filter = 'none';
-                    btnShield.style.cursor = 'pointer';
-                } else {
-                    btnShield.style.opacity = '0.3';
-                    btnShield.style.filter = 'grayscale(100%)';
-                    btnShield.style.cursor = 'default';
+            const btnShieldKey = `btn-shield-${sCount > 0 || sActive}`;
+            if (this._domCache['btn-shield'] !== btnShieldKey) {
+                this._domCache['btn-shield'] = btnShieldKey;
+                const btnShield = document.getElementById('btn-shield');
+                if (btnShield) {
+                    if (sCount > 0 || sActive) {
+                        btnShield.style.opacity = '1';
+                        btnShield.style.filter = 'none';
+                        btnShield.style.cursor = 'pointer';
+                    } else {
+                        btnShield.style.opacity = '0.3';
+                        btnShield.style.filter = 'grayscale(100%)';
+                        btnShield.style.cursor = 'default';
+                    }
                 }
             }
         }

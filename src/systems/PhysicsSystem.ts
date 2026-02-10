@@ -27,6 +27,7 @@ export const generateId = () => (nextId++).toString();
 
 // Tank collision constants
 const TANK_COLLISION_RADIUS = 15;
+const TANK_COLLISION_RADIUS_SQ = TANK_COLLISION_RADIUS * TANK_COLLISION_RADIUS;
 const TANK_CENTER_Y_OFFSET = 10;
 const TANK_DAMAGE_RADIUS_BUFFER = 10;
 
@@ -292,8 +293,8 @@ export class PhysicsSystem {
             if (tank.health <= 0) continue;
             const dx = proj.x - tank.x;
             const dy = proj.y - (tank.y - TANK_CENTER_Y_OFFSET);
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < TANK_COLLISION_RADIUS) return true;
+            const distSq = dx * dx + dy * dy;
+            if (distSq < TANK_COLLISION_RADIUS_SQ) return true;
         }
 
         return false;
@@ -404,8 +405,8 @@ export class PhysicsSystem {
                 if (tank.health <= 0) continue;
                 const dx = x - tank.x;
                 const dy = y - (tank.y - TANK_CENTER_Y_OFFSET);
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist < TANK_COLLISION_RADIUS) {
+                const distSq = dx * dx + dy * dy;
+                if (distSq < TANK_COLLISION_RADIUS_SQ) {
                     // Direct hit on tank! Center it slightly?
                     // Or just let it be. If we center it, it looks cleaner.
                     // But if we want to pile up, maybe slight offset is good.

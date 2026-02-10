@@ -53,6 +53,7 @@ export default defineConfig({
         })
     ],
     test: {
-        exclude: ['**/node_modules/**', '**/dist/**', 'tests/app.spec.ts']
+        exclude: ['**/node_modules/**', '**/dist/**', 'tests/app.spec.ts'],
+        setupFiles: ['./tests/setup.ts']
     }
 });

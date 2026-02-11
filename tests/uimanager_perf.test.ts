@@ -66,9 +66,6 @@ global.window = {
     innerWidth: 800
 } as any;
 
-// Mock Weapon Data if needed (though it seems imported correctly)
-// If WEAPONS is empty in test env, we might need to mock it, but let's assume imports work.
-
 describe('UIManager Performance', () => {
     let ui: UIManager;
     let state: GameState;
